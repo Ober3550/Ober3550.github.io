@@ -506,12 +506,12 @@ class Hero{
                 if(map[i].collision(this.x,this.dx,this.y,this.dy,this.r)) {
                     if(this.points >= 10) {
                         if(this.win == false) {
-                            if(levelNum == levelNumMax-1) {
-                                levelNumMax++;
+                            if(levelNum > levelNumMax) {
+                                levelNumMax = levelNum;
+                                localStorage && (localStorage.levelNumMax = levelNumMax);
                             }
-                            localStorage && (localStorage.levelNumMax = levelNumMax);
                             this.win = true;
-                            if(levelNum < levelNumMax-2)
+                            if(levelNum < levels.length-1)
                                 levelNum++;
                         }
                     }
@@ -596,7 +596,7 @@ function startNewTitleScreen()
     for(let y=0; y<3; y++){
         for(let x=0; x<20; x++){
             if(x % 2 == 0 && y % 2 == 0){
-                if(i < levelNumMax && i < levels.length){
+                if((i <= levelNum || i <= levelNumMax) && i < levels.length){
                     i++;
                     map.push(new Rect(x*(width/20) + offX,y*(width/20) + offY,(x+1)*(width/20) + offX,(y+1)*(width/20) + offY,MapElement.LEVEL,i+""));
                 }
@@ -744,20 +744,22 @@ function gameUpdate()
 
 function setup() {
     // For debugging setting level num max to 1
-    //localStorage && (localStorage.levelNumMax = 1);
+    
     if (localStorage && 'levelNumMax' in localStorage) {
         levelNumMax = Number(localStorage.levelNumMax);
         if(levelNumMax > levels.length){
+            levelNumMax = levels.length-1;
             levelNum = levels.length-1;
+            localStorage && (localStorage.levelNumMax = levelNumMax);
         }
         else{
-            levelNum = levelNumMax - 1;
+            levelNum = levelNumMax;
         }
     }
     else{
-        levelNumMax = 1;
+        levelNumMax = 0;
+        levelNum = levelNumMax;
         localStorage && (localStorage.levelNumMax = levelNumMax);
-        levelNum = levelNumMax - 1;
     }
     startNewTitleScreen();    
 }
@@ -784,7 +786,7 @@ function keyPressed()
     if(titleScreen == true){
         if(key == 'a' && levelNum > 0){
             levelNum--;
-        }else if(key == 'd' && levelNum < levelNumMax-2){
+        }else if(key == 'd' && levelNum < levelNumMax-1){
             levelNum++;
         }
         if(key == ' '){
