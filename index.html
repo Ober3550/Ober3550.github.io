@@ -257,7 +257,8 @@ let levels = [[
 ]];
 // Globals
 let inputNames = ['w','s','a','d'];
-let inputStates = [false,false,false,false,false];
+let inputCodes = [38,40,37,39];
+let inputStates = [false,false,false,false];
 let prevPos = [-1,-1];
 let mousePos = [-1,-1];
 let hero;
@@ -702,13 +703,13 @@ function gameUpdate()
             anyTouch = true;
         }
         if(mousePos[1] < height/2){
-            inputStates[4] = true;
+            inputStates[0] = true;
             anyTouch = true;
         }
     }
     // Player input
     if(hero.lifetime > 0){
-        if(inputStates[0] || inputStates[4]){
+        if(inputStates[0]){
             hero.jump();
         }
         else if(inputStates[1]){
@@ -793,14 +794,16 @@ function draw() {
     }
 }
 //let inputNames = ['w','s','a','d'];
-//let inputStates = [false,false,false,false,false];
+//let inputCodes = [38,40,37,39];
+//let inputStates = [false,false,false,false];
 function keyPressed()
 {
     if(key == ' ')    inputStates[0] = true;
-    if(keyCode == 38) inputStates[0] = true;
-    if(keyCode == 40) inputStates[1] = true;
-    if(keyCode == 37) inputStates[2] = true;
-    if(keyCode == 39) inputStates[3] = true;
+    for(let i=0;i<inputCodes.length;i++){
+        if(keyCode == inputCodes[i]){
+            inputStates[i] = true;
+        }
+    }
     for(let i=0;i<inputNames.length;i++){
         if(key == inputNames[i]){
             inputStates[i] = true;
@@ -824,14 +827,14 @@ function keyPressed()
         }
     }
 }
-
 function keyReleased()
 {
     if(key == ' ')    inputStates[0] = false;
-    if(keyCode == 38) inputStates[0] = false;
-    if(keyCode == 40) inputStates[1] = false;
-    if(keyCode == 37) inputStates[2] = false;
-    if(keyCode == 39) inputStates[3] = false;
+    for(let i=0;i<inputCodes.length;i++){
+        if(keyCode == inputCodes[i]){
+            inputStates[i] = false;
+        }
+    }
     for(let i=0;i<inputNames.length;i++){
         if(key == inputNames[i]){
             inputStates[i] = false;
