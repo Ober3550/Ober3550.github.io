@@ -368,7 +368,7 @@ class Hero{
         this.airtime = 0;
         this.wallslide = Directions.NONE;
         this.wallBottom = 0;
-        this.pd = 2;
+        this.pd = 1.5;
         this.r = 0;
         this.points = 0;
         this.lifetime = maxLifetime;
@@ -511,7 +511,8 @@ class Hero{
                             }
                             localStorage && (localStorage.levelNumMax = levelNumMax);
                             this.win = true;
-                            levelNum++;
+                            if(levelNum < levelNumMax-2)
+                                levelNum++;
                         }
                     }
                 }
@@ -747,7 +748,7 @@ function setup() {
     if (localStorage && 'levelNumMax' in localStorage) {
         levelNumMax = Number(localStorage.levelNumMax);
         if(levelNumMax > levels.length){
-            levelNum = levelNumMax-2;
+            levelNum = levels.length-1;
         }
         else{
             levelNum = levelNumMax - 1;
@@ -783,7 +784,7 @@ function keyPressed()
     if(titleScreen == true){
         if(key == 'a' && levelNum > 0){
             levelNum--;
-        }else if(key == 'd' && levelNum < levelNumMax){
+        }else if(key == 'd' && levelNum < levelNumMax-2){
             levelNum++;
         }
         if(key == ' '){
