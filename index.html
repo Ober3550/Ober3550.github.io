@@ -384,7 +384,7 @@ class Hero{
     {
         fill('#e496c8');
         rect(0,0,(this.lifetime/maxLifetime) * width, tileSize);
-        fill(0);
+        fill(128);
         textAlign(CENTER,CENTER);
         textSize(tileSize);
         text(Math.round((this.lifetime / 60),2)+"s",width/2,tileSize * 0.6);
@@ -507,13 +507,13 @@ class Hero{
                 if(map[i].collision(this.x,this.dx,this.y,this.dy,this.r)) {
                     if(this.points >= 10) {
                         if(this.win == false) {
+                            this.win = true;
+                            if(levelNum < levels.length-1)
+                                levelNum++;
                             if(levelNum > levelNumMax) {
                                 levelNumMax = levelNum;
                                 localStorage && (localStorage.levelNumMax = levelNumMax);
                             }
-                            this.win = true;
-                            if(levelNum < levels.length-1)
-                                levelNum++;
                         }
                     }
                 }
@@ -750,7 +750,6 @@ function gameUpdate()
 
 function setup() {
     // For debugging setting level num max to 1
-    
     if (localStorage && 'levelNumMax' in localStorage) {
         levelNumMax = Number(localStorage.levelNumMax);
         if(levelNumMax > levels.length){
