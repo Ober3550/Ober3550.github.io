@@ -752,7 +752,7 @@ function setup() {
     // For debugging setting level num max to 1
     if (localStorage && 'levelNumMax' in localStorage) {
         levelNumMax = Number(localStorage.levelNumMax);
-        if(levelNumMax > levels.length){
+        if(levelNumMax > levels.length-1){
             levelNumMax = levels.length-1;
             levelNum = levels.length-1;
             localStorage && (localStorage.levelNumMax = levelNumMax);
@@ -791,7 +791,7 @@ function keyPressed()
     if(titleScreen == true){
         if(key == 'a' && levelNum > 0){
             levelNum--;
-        }else if(key == 'd' && levelNum < levelNumMax-1){
+        }else if(key == 'd' && levelNum < levelNumMax){
             levelNum++;
         }
         if(key == ' '){
