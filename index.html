@@ -258,6 +258,8 @@ let levels = [[
 // Globals
 let inputNames = ['w','s','a','d'];
 let inputStates = [false,false,false,false,false];
+let prevPos = [-1,-1];
+let mousePos = [-1,-1];
 let hero;
 let map = [];
 let tileSize;
@@ -687,15 +689,19 @@ function gameUpdate()
 {
     let anyTouch = false;
     for(let i=0;i<touches.length;i++){
-        if(touches[i].x < width/2){
+        mousePos[0] = touches[i].x;
+        mousePos[1] = touches[i].y;
+    }
+    if(mousePos[0] != -1 || mousePos[1] != -1){
+        if(mousePos[0] < width/3){
             inputStates[2] = true;
             anyTouch = true;
         }
-        else{
+        else if(mousePos[0] > width*2/3){
             inputStates[3] = true;
             anyTouch = true;
         }
-        if(touches[i].y < height/2){
+        if(mousePos[1] < height/2){
             inputStates[4] = true;
             anyTouch = true;
         }
@@ -786,12 +792,24 @@ function draw() {
         gameUpdate();
     }
 }
+//let inputNames = ['w','s','a','d'];
+//let inputStates = [false,false,false,false,false];
 function keyPressed()
 {
+    if(key == ' ')    inputStates[0] = true;
+    if(keyCode == 38) inputStates[0] = true;
+    if(keyCode == 40) inputStates[1] = true;
+    if(keyCode == 37) inputStates[2] = true;
+    if(keyCode == 39) inputStates[3] = true;
+    for(let i=0;i<inputNames.length;i++){
+        if(key == inputNames[i]){
+            inputStates[i] = true;
+        }
+    }
     if(titleScreen == true){
-        if(key == 'a' && levelNum > 0){
+        if(inputStates[2] && levelNum > 0){
             levelNum--;
-        }else if(key == 'd' && levelNum < levelNumMax){
+        }else if(inputStates[3] && levelNum < levelNumMax){
             levelNum++;
         }
         if(key == ' '){
@@ -804,23 +822,17 @@ function keyPressed()
         if(key == ' ' && (gameOver || hero.win)){
             startNewTitleScreen();
         }
-        for(let i=0;i<inputNames.length;i++){
-            if(key == ' ' && i==0){
-                inputStates[i] = true;
-            }
-            if(key == inputNames[i]){
-                inputStates[i] = true;
-            }
-        }
     }
 }
 
 function keyReleased()
 {
+    if(key == ' ')    inputStates[0] = false;
+    if(keyCode == 38) inputStates[0] = false;
+    if(keyCode == 40) inputStates[1] = false;
+    if(keyCode == 37) inputStates[2] = false;
+    if(keyCode == 39) inputStates[3] = false;
     for(let i=0;i<inputNames.length;i++){
-        if(key == ' ' && i==0){
-            inputStates[i] = false;
-        }
         if(key == inputNames[i]){
             inputStates[i] = false;
         }
@@ -837,15 +849,24 @@ function mousePressed()
                 }
             }
         }
+    }else{
+        mousePos[0] = mouseX;
+        mousePos[1] = mouseY;
     }
 }
 function touchEnded()
 {
+    mousePos = [-1,-1];
     for(let i=0; i<5;i++){
         inputStates[i] = false;
     }
 }
-
+function mouseReleased(){
+    mousePos = [-1,-1];
+    for(let i=0; i<5;i++){
+        inputStates[i] = false;
+    }
+}
 function windowResized()
 {
     startNewGame(); 
