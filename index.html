@@ -269,7 +269,7 @@ let titleScreen = true;
 let gameOver = false;
 let level;
 let levelNum = 0;
-let levelNumMax = 0;
+let levelNumMax = 10;
 const Directions = {
     NONE : 0,
     LEFT : 1,
@@ -757,6 +757,7 @@ function gameUpdate()
 
 function setup() {
     // For debugging setting level num max to 1
+    /*
     if (localStorage && 'levelNumMax' in localStorage) {
         levelNumMax = Number(localStorage.levelNumMax);
         if(levelNumMax > levels.length-1){
@@ -769,10 +770,11 @@ function setup() {
         }
     }
     else{
-        levelNumMax = 0;
-        levelNum = levelNumMax;
+        
         localStorage && (localStorage.levelNumMax = levelNumMax);
-    }
+    }*/
+    levelNumMax = 10;
+    levelNum = 0;
     startNewTitleScreen();    
 }
 
