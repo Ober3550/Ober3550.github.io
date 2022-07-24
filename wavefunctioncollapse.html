@@ -4,13 +4,13 @@
     <script src="https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/p5.js"></script>
     <script>
       const tileImages = [];
-      const IMAGE_COUNT = 7;
+      const IMAGE_COUNT = 9;
       const IMAGE_SIZE_PX = 14;
-      const DIMX = 160;
+      const DIMX = 80;
       const DIMY = 80;
-      const TILES_PER_FRAME = 100;
+      const TILES_PER_FRAME = 50;
       const SHOW_VALID_COUNT = false;
-      const CANVAS_WIDTH = 1400;
+      const CANVAS_WIDTH = 700;
       const CANVAS_HEIGHT = 700;
       const UP = 0;
       const RIGHT = 1;
@@ -39,12 +39,14 @@
           image_idx,
           edges = [[], [], [], []],
           rotation = 0,
-          selfNeighbor = true
+          selfNeighbor = true,
+          probability = 1
         ) {
           this.image_idx = image_idx;
           this.edges = edges;
           this.rotation = rotation;
           this.selfNeighbor = selfNeighbor;
+          this.probability = probability;
           if (rotation == 0) {
             // Generate edge definition from image pixels
             loadPixels();
@@ -83,7 +85,7 @@
               newEdges[newEdge] = this.edges[oldEdge];
             }
           }
-          return new TileRule(this.image_idx, newEdges, num, this.selfNeighbor);
+          return new TileRule(this.image_idx, newEdges, num, this.selfNeighbor, this.probability);
         }
         calculateAdjacency() {
           // Sets up the adjacency rules within the classes
@@ -171,7 +173,10 @@
         for (let i = 0; i < tileImages.length; i++) {
           tileRules[i] = new TileRule(i);
         }
+        tileRules[6].probability = 4;
+        tileRules[7].probability = 10;
         tileRules[6].selfNeighbor = false;
+        tileRules[9].selfNeighbor = false;
         for (let i = 0; i < tileImages.length; i++) {
           for (let j = 1; j <= 3; j++) {
             tileRules.push(tileRules[i].rotate(j));
@@ -304,6 +309,17 @@
           }
         }
       }
+      
+      function probabilityBucket(validTiles){
+        let bucket = [];
+        for(let i=0;i<validTiles.length;i++){
+          for(let j=0;j<tileRules[validTiles[i]].probability;j++){
+            bucket.push(validTiles[i]);
+          }
+        }
+        return bucket;
+      }
+
       let valid = [];
       let allValid = true;
       function draw() {
@@ -350,7 +366,7 @@
               });
               if (tilesCopy.length > 0) {
                 let tile = random(tilesCopy);
-                let selectedTile = random(tile.validTiles);
+                let selectedTile = random(probabilityBucket(tile.validTiles));
                 if (selectedTile != null) {
                   tile.validTiles = [selectedTile];
                   tile.collapsed = true;
