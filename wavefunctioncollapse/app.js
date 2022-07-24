@@ -8,16 +8,17 @@ let settings = {
     IMAGE_COUNT: 8,
     IMAGE_SIZE_PX: 10,
   },
-  maze_tiles:{
+  maze_tiles: {
     IMAGE_COUNT: 4,
     IMAGE_SIZE_PX: 15,
   },
-  pipe_tiles:{
+  pipe_tiles: {
     IMAGE_COUNT: 5,
     IMAGE_SIZE_PX: 15,
-  }
+  },
 };
 let CURRENT_CONFIG = "circuit";
+let LAST_CHANGED = Date.now();
 const DIMX = 50;
 const DIMY = 50;
 const TILES_PER_FRAME = 50;
@@ -44,7 +45,9 @@ function preload() {
   for (let j = 0; j < imageSets.length; j++) {
     tileImages[imageSets[j]] = [];
     for (let i = 0; i <= settings[imageSets[j]].IMAGE_COUNT; i++) {
-      tileImages[imageSets[j]].push(loadImage(`wavefunctioncollapse/${imageSets[j]}/${i}.png`));
+      tileImages[imageSets[j]].push(
+        loadImage(`wavefunctioncollapse/${imageSets[j]}/${i}.png`)
+      );
     }
   }
 }
@@ -153,16 +156,20 @@ function setupRules() {
 }
 
 function mousePressed() {
-  let configs = Object.keys(settings);
-  let currIdx = 0;
-  for (let i = 0; i < configs.length; i++) {
-    if (configs[i] == CURRENT_CONFIG) {
-      currIdx = i;
+  let timeSinceLast = Date.now() - LAST_CHANGED;
+  if (timeSinceLast > 1000) {
+    LAST_CHANGED = Date.now();
+    let configs = Object.keys(settings);
+    let currIdx = 0;
+    for (let i = 0; i < configs.length; i++) {
+      if (configs[i] == CURRENT_CONFIG) {
+        currIdx = i;
+      }
     }
+    let nextIdx = (currIdx + 1) % configs.length;
+    CURRENT_CONFIG = configs[nextIdx];
+    setupRules();
   }
-  let nextIdx = (currIdx + 1) % configs.length;
-  CURRENT_CONFIG = configs[nextIdx];
-  setupRules();
 }
 
 function probabilityBucket(validTiles) {
