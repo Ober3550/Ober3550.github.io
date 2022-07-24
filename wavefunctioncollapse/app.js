@@ -22,7 +22,7 @@ let QUEUE_CONFIG = "";
 let LAST_CHANGED = Date.now();
 const DIMX = 40;
 const DIMY = 40;
-const TILES_PER_FRAME = 50;
+const TILES_PER_FRAME = 1;
 const SHOW_VALID_COUNT = false;
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
@@ -160,7 +160,7 @@ function setupRules() {
 
 function mousePressed() {
   let timeSinceLast = Date.now() - LAST_CHANGED;
-  if (timeSinceLast > 1000) {
+  if (timeSinceLast > 1000 * 10) {
     LAST_CHANGED = Date.now();
     let configs = Object.keys(settings);
     let currIdx = 0;
