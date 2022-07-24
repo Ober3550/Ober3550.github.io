@@ -35,10 +35,16 @@
       }
 
       class TileRule {
-        constructor(image_idx, edges = [[], [], [], []], rotation = 0) {
+        constructor(
+          image_idx,
+          edges = [[], [], [], []],
+          rotation = 0,
+          selfNeighbor = true
+        ) {
           this.image_idx = image_idx;
           this.edges = edges;
           this.rotation = rotation;
+          this.selfNeighbor = selfNeighbor;
           if (rotation == 0) {
             // Generate edge definition from image pixels
             loadPixels();
@@ -77,23 +83,30 @@
               newEdges[newEdge] = this.edges[oldEdge];
             }
           }
-          return new TileRule(this.image_idx, newEdges, num);
+          return new TileRule(this.image_idx, newEdges, num, this.selfNeighbor);
         }
         calculateAdjacency() {
           // Sets up the adjacency rules within the classes
           for (let i = 0; i < tileRules.length; i++) {
             if (tileRules[i] != null) {
-              if (checkArrays(this.edges[UP], tileRules[i].edges[DOWN])) {
-                this.up.push(i);
-              }
-              if (checkArrays(this.edges[DOWN], tileRules[i].edges[UP])) {
-                this.down.push(i);
-              }
-              if (checkArrays(this.edges[RIGHT], tileRules[i].edges[LEFT])) {
-                this.right.push(i);
-              }
-              if (checkArrays(this.edges[LEFT], tileRules[i].edges[RIGHT])) {
-                this.left.push(i);
+              if (
+                !this.selfNeighbor &&
+                this.image_idx == tileRules[i].image_idx
+              ) {
+                // Do nothing
+              }else{
+                if (checkArrays(this.edges[UP], tileRules[i].edges[DOWN])) {
+                  this.up.push(i);
+                }
+                if (checkArrays(this.edges[DOWN], tileRules[i].edges[UP])) {
+                  this.down.push(i);
+                }
+                if (checkArrays(this.edges[RIGHT], tileRules[i].edges[LEFT])) {
+                  this.right.push(i);
+                }
+                if (checkArrays(this.edges[LEFT], tileRules[i].edges[RIGHT])) {
+                  this.left.push(i);
+                }
               }
             }
           }
@@ -158,6 +171,7 @@
         for (let i = 0; i < tileImages.length; i++) {
           tileRules[i] = new TileRule(i);
         }
+        tileRules[6].selfNeighbor = false;
         for (let i = 0; i < tileImages.length; i++) {
           for (let j = 1; j <= 3; j++) {
             tileRules.push(tileRules[i].rotate(j));
@@ -168,7 +182,7 @@
             tileRules[i].calculateAdjacency();
           }
         }
-        if (LOGGING) console.log(tileRules);
+        console.log(tileRules);
         let fill = 1 + 1 / IMAGE_SIZE_PX;
         tileWidth = (width * fill) / DIMX;
         tileHeight = (height * fill) / DIMY;
@@ -326,15 +340,13 @@
                 );
               });
               let minCount = Infinity;
-              for(let i=0;i<tilesCopy.length;i++){
-                if(tilesCopy[i].validTiles.length < minCount){
+              for (let i = 0; i < tilesCopy.length; i++) {
+                if (tilesCopy[i].validTiles.length < minCount) {
                   minCount = tilesCopy[i].validTiles.length;
                 }
               }
               tilesCopy = tilesCopy.filter((element) => {
-                return (
-                  element.validTiles.length == minCount
-                );
+                return element.validTiles.length == minCount;
               });
               if (tilesCopy.length > 0) {
                 let tile = random(tilesCopy);
