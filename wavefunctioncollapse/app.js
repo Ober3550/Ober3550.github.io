@@ -8,6 +8,14 @@ let settings = {
     IMAGE_COUNT: 8,
     IMAGE_SIZE_PX: 10,
   },
+  maze_tiles:{
+    IMAGE_COUNT: 4,
+    IMAGE_SIZE_PX: 15,
+  },
+  pipe_tiles:{
+    IMAGE_COUNT: 5,
+    IMAGE_SIZE_PX: 15,
+  }
 };
 let CURRENT_CONFIG = "circuit";
 const DIMX = 50;
