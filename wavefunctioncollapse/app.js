@@ -18,6 +18,7 @@ let settings = {
   },
 };
 let CURRENT_CONFIG = "circuit";
+let QUEUE_CONFIG = "";
 let LAST_CHANGED = Date.now();
 const DIMX = 50;
 const DIMY = 50;
@@ -77,6 +78,8 @@ function setupRules() {
   tileRules = [];
   tiles = [];
   eventStack = [];
+  allValid = true;
+  valid = [];
   for (let i = 0; i <= settings[CURRENT_CONFIG].IMAGE_COUNT; i++) {
     tileRules[i] = new TileRule(i);
   }
@@ -167,8 +170,7 @@ function mousePressed() {
       }
     }
     let nextIdx = (currIdx + 1) % configs.length;
-    CURRENT_CONFIG = configs[nextIdx];
-    setupRules();
+    QUEUE_CONFIG = configs[nextIdx];
   }
 }
 
@@ -185,6 +187,11 @@ function probabilityBucket(validTiles) {
 let valid = [];
 let allValid = true;
 function update() {
+  if(QUEUE_CONFIG != ""){
+    CURRENT_CONFIG = QUEUE_CONFIG;
+    QUEUE_CONFIG = "";
+    setupRules();
+  }
   if (running) {
     if (allValid) {
       // Pick a random tile to collapse
