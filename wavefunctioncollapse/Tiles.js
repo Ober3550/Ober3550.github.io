@@ -27,7 +27,7 @@ class Tile {
       }
     } else {
       fill(100);
-      noStroke();
+      stroke(100);
       rect(-tileWidth / 2, -tileHeight / 2, tileWidth, tileHeight);
       if (SHOW_VALID_COUNT) {
         textSize(tileWidth / 2);
@@ -60,6 +60,7 @@ function checkNeighbors(x, y, resetBacktracking = true) {
     if (currentTile.collapsed) {
       currentTile.draw();
     } else {
+      if(!tilesCopy.includes(currentTile)) tilesCopy.push(currentTile);
       currentTile.validTiles = [...Array(tileRules.length).keys()];
       if (resetBacktracking) currentTile.backtrackInvalid = [];
       currentTile.validTiles = currentTile.validTiles.filter((tile) => {
