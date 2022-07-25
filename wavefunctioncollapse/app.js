@@ -21,7 +21,7 @@ let settings = {
     IMAGE_SIZE_PX: 14,
   },
   coast: {
-    IMAGE_COUNT: 8,
+    IMAGE_COUNT: 12,
     IMAGE_SIZE_PX: 10,
   },
   pipe_tiles: {
@@ -29,7 +29,7 @@ let settings = {
     IMAGE_SIZE_PX: 15,
   },
 };
-let CURRENT_CONFIG = "circuit";
+let CURRENT_CONFIG = "coast";
 let QUEUE_CONFIG = "";
 let LAST_CHANGED = Date.now();
 const DIMX = IS_MOBILE ? 40 : 200;
@@ -103,12 +103,15 @@ function setupRules() {
     case "coast": {
       tileRules[2].edgeOnly = [2, 7];
       tileRules[7].edgeOnly = [2, 7];
+      tileRules[10].edgeOnly = [10, 12];
+      tileRules[11].removeNeighbors = [11];
       tileRules[5].removeNeighbors = [5, 6, 8];
       tileRules[6].removeNeighbors = [5, 6, 8];
       tileRules[8].removeNeighbors = [5, 6, 8];
       tileRules[3].removeNeighbors = [3];
       tileRules[4].removeNeighbors = [4];
-      tileRules[0].probability = 100;
+      tileRules[0].probability = 40;
+      tileRules[9].probability = 20;
       tileRules[1].probability = 100;
       tileRules[2].probability = 10;
       tileRules[7].probability = 10;
