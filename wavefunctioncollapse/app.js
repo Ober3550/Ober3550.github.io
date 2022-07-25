@@ -204,7 +204,6 @@ function update() {
       if (tilesCopy.length == 0) {
         running = false;
       }
-      console.log(tilesCopy.length);
       // Pick a random tile to collapse
       tilesCopy = tilesCopy.filter((element) => {
         return element.validTiles.length > 1 || element.collapsed == false;
