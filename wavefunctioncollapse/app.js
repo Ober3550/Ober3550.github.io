@@ -83,13 +83,9 @@ function setupRules() {
     case "coast": {
       tileRules[2].edgeOnly = [2];
       tileRules[7].edgeOnly = [7];
-      tileRules[2].removeNeighbors = [7];
-      tileRules[7].removeNeighbors = [2];
-      tileRules[3].removeNeighbors = [3, 4];
-      tileRules[4].removeNeighbors = [3, 4];
-      tileRules[5].removeNeighbors = [5, 6];
-      tileRules[6].removeNeighbors = [5, 6];
-      tileRules[8].removeNeighbors = [8];
+      tileRules[5].removeNeighbors = [5, 6, 8];
+      tileRules[6].removeNeighbors = [5, 6, 8];
+      tileRules[8].removeNeighbors = [5, 6, 8];
       tileRules[0].probability = 100;
       tileRules[1].probability = 100;
       tileRules[2].probability = 10;
