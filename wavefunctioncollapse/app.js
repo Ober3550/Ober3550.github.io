@@ -8,10 +8,6 @@ let settings = {
     IMAGE_COUNT: 8,
     IMAGE_SIZE_PX: 10,
   },
-  maze_tiles: {
-    IMAGE_COUNT: 4,
-    IMAGE_SIZE_PX: 15,
-  },
   pipe_tiles: {
     IMAGE_COUNT: 5,
     IMAGE_SIZE_PX: 15,
@@ -60,21 +56,13 @@ function setup() {
 }
 
 function draw() {
-  background(100);
-  // Draw all the tiles
-  for (let j = 0; j < DIMY; j++) {
-    for (let i = 0; i < DIMX; i++) {
-      if (j * DIMX + i < tiles.length) {
-        tiles[j * DIMX + i].draw(i, j);
-      }
-    }
-  }
   for (let f = 0; f < TILES_PER_FRAME; f++) {
     update();
   }
 }
 
 function setupRules() {
+  background(100);
   tileRules = [];
   tiles = [];
   eventStack = [];
@@ -160,7 +148,7 @@ function setupRules() {
 
 function mousePressed() {
   let timeSinceLast = Date.now() - LAST_CHANGED;
-  if (timeSinceLast > 1000 * 10) {
+  if (timeSinceLast > 1000 * 2) {
     LAST_CHANGED = Date.now();
     let configs = Object.keys(settings);
     let currIdx = 0;
@@ -226,6 +214,7 @@ function update() {
         if (selectedTile != null) {
           tile.validTiles = [selectedTile];
           tile.collapsed = true;
+          tile.draw();
           eventStack.push({
             i: tile.i,
             j: tile.j,
@@ -258,6 +247,7 @@ function update() {
       if (LOGGING) console.log(`Reversed: ${JSON.stringify(event)}`);
       let lastTile = tiles[event.j * DIMX + event.i];
       lastTile.collapsed = false;
+      lastTile.draw();
       let alreadyAdded = false;
       for (let i = 0; i < lastTile.backtrackInvalid.length; i++) {
         if (lastTile.backtrackInvalid[i] == event.selected) {

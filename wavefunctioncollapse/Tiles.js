@@ -6,28 +6,29 @@ class Tile {
     this.backtrackInvalid = [];
     this.collapsed = false;
   }
-  draw(i, j) {
+  draw() {
+    let tileX =
+      tileWidth * this.i -
+      (tileWidth / settings[CURRENT_CONFIG].IMAGE_SIZE_PX) * this.i;
+    let tileY =
+      tileHeight * this.j -
+      (tileHeight / settings[CURRENT_CONFIG].IMAGE_SIZE_PX) * this.j;
+    imageMode(CENTER);
+    translate(tileX + tileWidth / 2, tileY + tileHeight / 2);
     if (this.collapsed && this.validTiles.length > 0) {
       let tileRule = tileRules[this.validTiles[0]];
       if (tileRule != null) {
         let tileImage = tileImages[CURRENT_CONFIG][tileRule.image_idx];
         let rotation = tileRule.rotation;
-        // Make grid tiles overlap edges
-        let tileX =
-          tileWidth * i -
-          (tileWidth / settings[CURRENT_CONFIG].IMAGE_SIZE_PX) * i;
-        let tileY =
-          tileHeight * j -
-          (tileHeight / settings[CURRENT_CONFIG].IMAGE_SIZE_PX) * j;
-        imageMode(CENTER);
-        translate(tileX + tileWidth / 2, tileY + tileHeight / 2);
+        // Rotate the image
         rotate((PI / 2) * rotation);
         image(tileImage, 0, 0, tileWidth, tileHeight);
         rotate((-PI / 2) * rotation);
-        translate(-(tileX + tileWidth / 2), -(tileY + tileHeight / 2));
-        imageMode(CORNER);
       }
     } else {
+      fill(100);
+      noStroke();
+      rect(-tileWidth / 2, -tileHeight / 2, tileWidth, tileHeight);
       if (SHOW_VALID_COUNT) {
         textSize(tileWidth / 2);
         text(
@@ -41,6 +42,8 @@ class Tile {
         );
       }
     }
+    translate(-(tileX + tileWidth / 2), -(tileY + tileHeight / 2));
+    imageMode(CORNER);
   }
 }
 
@@ -54,7 +57,9 @@ function checkNeighbors(x, y, resetBacktracking = true) {
   // Reduce the entropy of neighbors
   if (x >= 0 && x < DIMX && y >= 0 && y < DIMY) {
     let currentTile = tiles[y * DIMX + x];
-    if (currentTile.collapsed == false) {
+    if (currentTile.collapsed) {
+      currentTile.draw();
+    } else {
       currentTile.validTiles = [...Array(tileRules.length).keys()];
       if (resetBacktracking) currentTile.backtrackInvalid = [];
       currentTile.validTiles = currentTile.validTiles.filter((tile) => {
