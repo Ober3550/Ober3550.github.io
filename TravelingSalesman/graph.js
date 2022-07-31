@@ -484,9 +484,9 @@ class Graph {
 
         // Redraw everything
         background(BACKGROUND_COLOR);
-        stroke(PALLETTE.red);
-        drawEdges(this.walk_ordered);
-        stroke(PALLETTE.green);
+        // stroke(PALLETTE.red);
+        // drawEdges(this.walk_ordered);
+        stroke(PALLETTE.blue);
         drawEdges(this.edges);
       }
     } else {
