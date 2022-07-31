@@ -8,7 +8,7 @@
       const CANVAS_WIDTH = 700;
       const CANVAS_HEIGHT = 700;
       const BACKGROUND_COLOR = "#646464";
-      const NODE_COUNT = 500;
+      const NODE_COUNT = 20;
       const EDGE_COUNT = 0;
       const NODE_SIZE = 20;
       
@@ -31,11 +31,14 @@
         createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
         background(BACKGROUND_COLOR);
         strokeWeight(2);
+        let start = new Date();
         let solving = new Graph(NODE_COUNT, EDGE_COUNT);
         solving.christofides();
         stroke(PALLETTE.blue);
         drawEdges(solving.edges);
         drawNodes(solving.nodes);
+        let end = new Date();
+        console.log("Total time: "+(end-start)+"ms");
       }
       function draw() {}
     </script>

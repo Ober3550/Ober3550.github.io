@@ -239,9 +239,11 @@ class Graph {
             let afterB = (j + 1 + nodes.length) % nodes.length;
             if (beforeB < afterA + 1) {
               let subset = nodes.slice(beforeB, afterA + 1);
-              console.log("i,j          :", i, j);
-              console.log("Node         :", nodes[i]);
-              console.log("Subset       :", subset);
+              if (LOG_PRUNE) {
+                console.log("i,j          :", i, j);
+                console.log("Node         :", nodes[i]);
+                console.log("Subset       :", subset);
+              }
               let nodePaths = [
                 JSON.parse(JSON.stringify(subset)),
                 JSON.parse(JSON.stringify(subset)),
@@ -322,8 +324,10 @@ class Graph {
                   console.log("WeightD      :", edgeWeights(edges[3]));
                 }
               }
-              console.log("Min Edge     :", nodePaths[minEdgeIndex]);
-              console.log("Min Weight   :", minWeight);
+              if (LOG_PRUNE) {
+                console.log("Min Edge     :", nodePaths[minEdgeIndex]);
+                console.log("Min Weight   :", minWeight);
+              }
               nodes.splice(beforeB, subset.length, ...nodePaths[minEdgeIndex]);
               i = -1;
               visited = [];
