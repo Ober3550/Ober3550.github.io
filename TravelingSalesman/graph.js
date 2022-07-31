@@ -23,15 +23,33 @@ class Graph {
     this.nodes = nodes;
     this.edges = edges;
     this.weight = weight;
+    this.currentState = "mst";
+    this.mst_visited = [0];
+    this.mst_unvisited = [...Array(this.nodes.length).keys()].slice(1);
+    this.mst_iter = 0;
+    this.pm_odds;
+    this.pm_distances;
+    this.pm_attempts = 0;
+    this.pm_min_matching = [];
+    this.pm_min_weight = Infinity;
+    this.pm_iter = 0;
+    this.walk_current = 0;
+    this.walk_ordered = [];
+    this.walk_iter = 0;
+    this.prune_nodes;
+    this.prune_iter = 0;
+    this.prune_visited = [];
+    this.prune_rotated = false;
+    this.prune_index = 0;
   }
   add_edges(edges) {
     for (let i = 0; i < edges.length; i++) {
-      edges[i].a.edges.push(edges[i]);
-      edges[i].b.edges.push(edges[i]);
       this.add_edge(edges[i]);
     }
   }
   add_edge(edge) {
+    edge.a.edges.push(edge);
+    edge.b.edges.push(edge);
     this.edges.push(edge);
     this.weight += edge.weight;
   }
@@ -48,18 +66,14 @@ class Graph {
   }
   minSpanTree() {
     let start = new Date();
-    let iter = 0;
-    let new_edges = [];
-    let visited = [0];
-    let unvisited = [...Array(this.nodes.length).keys()].slice(1);
-    while (unvisited.length > 0) {
+    while (this.mst_unvisited.length > 0) {
       let min_distance;
       let min_edge;
-      for (let i = 0; i < unvisited.length; i++) {
-        for (let j = 0; j < visited.length; j++) {
-          iter++;
-          let nodeA = this.nodes[visited[j]];
-          let nodeB = this.nodes[unvisited[i]];
+      for (let i = 0; i < this.mst_unvisited.length; i++) {
+        for (let j = 0; j < this.mst_visited.length; j++) {
+          this.mst_iter++;
+          let nodeA = this.nodes[this.mst_visited[j]];
+          let nodeB = this.nodes[this.mst_unvisited[i]];
           let newEdge = new Edge(nodeA, nodeB);
           if (min_distance == null || newEdge.weight < min_distance) {
             min_distance = newEdge.weight;
@@ -67,218 +81,284 @@ class Graph {
           }
         }
       }
-      new_edges.push(min_edge);
+      if (PART_UPDATE) {
+        stroke(PALLETTE.blue);
+        min_edge.draw();
+      }
+      this.add_edge(min_edge);
       let idxA = min_edge.a.index;
       let idxB = min_edge.b.index;
-      if (!visited.includes(idxA)) {
-        visited.push(idxA);
-        unvisited = unvisited.filter((x) => {
+      if (!this.mst_visited.includes(idxA)) {
+        this.mst_visited.push(idxA);
+        this.mst_unvisited = this.mst_unvisited.filter((x) => {
           return x != idxA;
         });
       }
-      if (!visited.includes(idxB)) {
-        visited.push(idxB);
-        unvisited = unvisited.filter((x) => {
+      if (!this.mst_visited.includes(idxB)) {
+        this.mst_visited.push(idxB);
+        this.mst_unvisited = this.mst_unvisited.filter((x) => {
           return x != idxB;
         });
       }
+      if (PART_UPDATE) {
+        break;
+      }
     }
-    this.remove_edges();
-    this.add_edges(new_edges);
-    let end = new Date();
-    if (LOG_MST || LOG_TIMING) {
-      //           MST   in   :
-      //           MST   iter :
-      //           MST   it/in:
-      console.log("MST   in   : " + (end - start) + "ms");
-      console.log("MST   iter : " + formatNumber(iter));
-      console.log(
-        "MST   it/in: " +
-          formatNumber(
-            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
-              100
-          )
-      );
+    if (PART_UPDATE) {
+      if (this.mst_unvisited.length == 0) {
+        this.currentState = "pm";
+      }
+    } else {
+      let end = new Date();
+      if (LOG_MST || LOG_TIMING) {
+        //           MST   in   :
+        //           MST   iter :
+        //           MST   it/in:
+        console.log("MST   in   : " + (end - start) + "ms");
+        console.log("MST   iter : " + formatNumber(this.mst_iter));
+        console.log(
+          "MST   it/in: " +
+            formatNumber(
+              Math.floor(
+                (this.mst_iter * 100) / (end - start == 0 ? 1 : end - start)
+              ) / 100
+            )
+        );
+      }
     }
   }
   perfectMatching() {
     let start = new Date();
-    let odds = this.nodes.filter((x) => {
-      return x.edges.length % 2;
-    });
-    let evens = this.nodes.filter((x) => {
-      return x.edges.length % 2 == 0;
-    });
-    let distances = [];
-    for (let i = 0; i < odds.length; i++) {
-      for (let j = i + 1; j < odds.length; j++) {
-        distances.push(new Edge(odds[i], odds[j]));
+    if (this.pm_odds == null) {
+      this.pm_odds = this.nodes.filter((x) => {
+        return x.edges.length % 2;
+      });
+    }
+    if (this.pm_distances == null) {
+      this.pm_distances = [];
+      for (let i = 0; i < this.pm_odds.length; i++) {
+        for (let j = i + 1; j < this.pm_odds.length; j++) {
+          this.pm_distances.push(new Edge(this.pm_odds[i], this.pm_odds[j]));
+        }
       }
+      this.pm_distances = this.pm_distances.sort((a, b) => {
+        return a.weight - b.weight;
+      });
     }
-    distances = distances.sort((a, b) => {
-      return a.weight - b.weight;
-    });
-    let attempts = 0;
     const MAX_ATTEMPTS = 20;
-    let min_matching = [];
-    let min_weight = Infinity;
-    let iter = 0;
     if (LOG_PM) {
-      console.log("Matching edge count: " + formatNumber(distances.length));
+      console.log(
+        "Matching edge count: " + formatNumber(this.pm_distances.length)
+      );
     }
-    while (attempts < MAX_ATTEMPTS) {
+    while (this.pm_attempts < MAX_ATTEMPTS) {
       let matching = [];
       let weight = 0;
       let visited = [];
-      for (let i = 0; i < distances.length; i++) {
-        iter++;
-        let index = (i + attempts) % distances.length;
-        let nodeA = distances[index].a.index;
-        let nodeB = distances[index].b.index;
+      for (let i = 0; i < this.pm_distances.length; i++) {
+        this.pm_iter++;
+        let index = (i + this.pm_attempts) % this.pm_distances.length;
+        let nodeA = this.pm_distances[index].a.index;
+        let nodeB = this.pm_distances[index].b.index;
         if (!visited.includes(nodeA) && !visited.includes(nodeB)) {
-          weight += distances[index].weight;
-          matching.push(distances[index]);
+          weight += this.pm_distances[index].weight;
+          matching.push(this.pm_distances[index]);
           visited.push(nodeA);
           visited.push(nodeB);
         }
-        if (visited.length == odds.length) {
+        if (visited.length == this.pm_odds.length) {
           break;
         }
       }
-      if (weight < min_weight) {
-        min_matching = matching;
-        min_weight = weight;
+      if (weight < this.pm_min_weight) {
+        this.pm_min_matching = matching;
+        this.pm_min_weight = weight;
         if (LOG_PM) {
           console.log("Attempt:", attempts);
-          console.log("Min matching:", min_matching);
-          console.log("Min weight  :", min_weight);
+          console.log("Min matching:", this.pm_min_matching);
+          console.log("Min weight  :", this.pm_min_weight);
         }
       }
-      attempts++;
-    }
-    let end = new Date();
-    if (LOG_PM || LOG_TIMING) {
-      if (LOG_PM) {
-        console.log("Attempts:", MAX_ATTEMPTS);
+      this.pm_attempts++;
+      if (PART_UPDATE) {
+        break;
       }
-      //           PM    in   :
-      //           PM    iter :
-      //           PM    it/in:
-      console.log("PM    in   : " + (end - start) + "ms");
-      console.log("PM    iter : " + formatNumber(iter));
-      console.log(
-        "PM    it/in: " +
-          formatNumber(
-            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
-              100
-          )
-      );
     }
-    this.add_edges(min_matching);
+    if (PART_UPDATE) {
+      if (this.pm_attempts == MAX_ATTEMPTS) {
+        stroke(PALLETTE.yellow);
+        drawEdges(this.pm_min_matching);
+        this.add_edges(this.pm_min_matching);
+        this.currentState = "walk";
+      }
+    } else {
+      this.add_edges(this.pm_min_matching);
+    }
+    if (!PART_UPDATE) {
+      if (LOG_PM || LOG_TIMING) {
+        let end = new Date();
+        if (LOG_PM) {
+          console.log("Attempts:", MAX_ATTEMPTS);
+        }
+        //           PM    in   :
+        //           PM    iter :
+        //           PM    it/in:
+        console.log("PM    in   : " + (end - start) + "ms");
+        console.log("PM    iter : " + formatNumber(this.pm_iter));
+        console.log(
+          "PM    it/in: " +
+            formatNumber(
+              Math.floor(
+                (this.pm_iter * 100) / (end - start == 0 ? 1 : end - start)
+              ) / 100
+            )
+        );
+      }
+    }
   }
   walkCycle() {
     let start = new Date();
-    let current = 0;
-    let ordered = [];
-    let iter = 0;
     while (this.edges.length > 0) {
       let noEdges = true;
       for (let i = 0; i < this.edges.length; i++) {
-        iter++;
-        if (this.edges[i].a.index == current) {
+        this.walk_iter++;
+        if (this.edges[i].a.index == this.walk_current) {
+          if (PART_UPDATE) {
+            stroke(PALLETTE.red);
+            this.edges[i].draw();
+          }
           noEdges = false;
-          ordered.push(this.edges[i]);
+          this.walk_ordered.push(this.edges[i]);
           this.edges.splice(i, 1);
-          current = ordered[ordered.length - 1].b.index;
+          this.walk_current =
+            this.walk_ordered[this.walk_ordered.length - 1].b.index;
           break;
-        } else if (this.edges[i].b.index == current) {
+        } else if (this.edges[i].b.index == this.walk_current) {
+          if (PART_UPDATE) {
+            stroke(PALLETTE.red);
+            this.edges[i].draw();
+          }
           noEdges = false;
           let temp = this.edges[i].a;
           this.edges[i].a = this.edges[i].b;
           this.edges[i].b = temp;
-          ordered.push(this.edges[i]);
-          current = ordered[ordered.length - 1].b.index;
+          this.walk_ordered.push(this.edges[i]);
+          this.walk_current =
+            this.walk_ordered[this.walk_ordered.length - 1].b.index;
           this.edges.splice(i, 1);
           break;
         }
       }
       if (noEdges) {
         // Rotate the array because the ordered list has created a closed cycle
-        ordered = arrayRotate(ordered);
-        current = ordered[ordered.length - 1].b.index;
+        this.walk_ordered = arrayRotate(this.walk_ordered);
+        this.walk_current =
+          this.walk_ordered[this.walk_ordered.length - 1].b.index;
+      }
+      if (PART_UPDATE) {
+        break;
       }
     }
-    let end = new Date();
-    if (LOG_WALK || LOG_TIMING) {
-      //           WALK  in   :
-      //           WALK  iter :
-      //           WALK  it/in:
-      console.log("WALK  in   : " + (end - start) + "ms");
-      console.log("WALK  iter : " + formatNumber(iter));
-      console.log(
-        "WALK  it/in: " +
-          formatNumber(
-            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
-              100
-          )
-      );
+    if (PART_UPDATE) {
+      if (this.edges.length == 0) {
+        this.currentState = "prune";
+        this.add_edges(this.walk_ordered);
+      }
+    } else {
+      this.add_edges(this.walk_ordered);
+      let end = new Date();
+      if (LOG_WALK || LOG_TIMING) {
+        //           WALK  in   :
+        //           WALK  iter :
+        //           WALK  it/in:
+        console.log("WALK  in   : " + (end - start) + "ms");
+        console.log("WALK  iter : " + formatNumber(this.walk_iter));
+        console.log(
+          "WALK  it/in: " +
+            formatNumber(
+              Math.floor(
+                (this.walk_iter * 100) / (end - start == 0 ? 1 : end - start)
+              ) / 100
+            )
+        );
+      }
     }
-    this.remove_edges;
-    this.add_edges(ordered);
   }
   prune() {
     let start = new Date();
-    let nodes = this.edges.map((x) => {
-      return x.a.index;
-    });
-    let iter = 0;
-    // Draw edges of previous cycle to demonstrate pruning
-    stroke(PALLETTE.red);
-    drawEdges(this.edges);
-    if (LOG_PRUNE) {
-      console.log("Cycle        :", nodes);
+    if (this.prune_nodes == null) {
+      this.prune_nodes = this.edges.map((x) => {
+        return x.a.index;
+      });
+      this.prune_nodes.push(this.edges[this.edges.length - 1].b.index);
     }
-    nodes.push(this.edges[this.edges.length - 1].b.index);
-    let visited = [];
-    let rotated = false;
-    for (let i = 0; i < nodes.length; i++) {
-      if (i == nodes.length - 1 && !rotated) {
+    if (LOG_PRUNE) {
+      console.log("Cycle        :", this.prune_nodes);
+    }
+    // Skip iterating if done
+    if (this.prune_nodes.length == this.nodes.length + 1) {
+      this.prune_index = this.prune_nodes.length;
+    }
+    while (this.prune_index < this.prune_nodes.length) {
+      if (
+        this.prune_index == this.prune_nodes.length - 1 &&
+        !this.prune_rotated
+      ) {
         if (LOG_PRUNE) {
-          console.log("Before rotate:", nodes);
+          console.log("Before rotate:", this.prune_nodes);
         }
-        let tempRotate = nodes.slice(1);
-        nodes = arrayRotate(tempRotate, false);
-        nodes.splice(0, 0, nodes[nodes.length - 1]);
-        rotated = true;
-        i = -1;
-        visited = [];
+        let tempRotate = this.prune_nodes.slice(1);
+        this.prune_nodes = arrayRotate(tempRotate, false);
+        this.prune_nodes.splice(
+          0,
+          0,
+          this.prune_nodes[this.prune_nodes.length - 1]
+        );
+        this.prune_rotated = true;
+        this.prune_index = -1;
+        this.prune_visited = [];
         if (LOG_PRUNE) {
-          console.log("After  rotate:", nodes);
+          console.log("After  rotate:", this.prune_nodes);
         }
       }
-      if (!visited.includes(nodes[i]) || i == nodes.length - 1) {
-        visited.push(nodes[i]);
+      if (
+        !this.prune_visited.includes(this.prune_nodes[this.prune_index]) ||
+        this.prune_index == this.prune_nodes.length - 1
+      ) {
+        this.prune_visited.push(this.prune_nodes[this.prune_index]);
+        if (PART_UPDATE && this.prune_index > 0) {
+          let part_edge = new Edge(
+            this.nodes[this.prune_nodes[this.prune_index-1]],
+            this.nodes[this.prune_nodes[this.prune_index]]
+          );
+          stroke(PALLETTE.green);
+          part_edge.draw();
+        }
       } else {
-        for (let j = i - 1; j >= 0; j--) {
-          iter++;
-          if (nodes[i] == nodes[j]) {
-            let beforeA = (i - 1 + nodes.length) % nodes.length;
-            let afterA = (i + 1 + nodes.length) % nodes.length;
-            let beforeB = (j - 1 + nodes.length) % nodes.length;
-            let afterB = (j + 1 + nodes.length) % nodes.length;
+        for (let j = this.prune_index - 1; j >= 0; j--) {
+          this.prune_iter++;
+          if (this.prune_nodes[this.prune_index] == this.prune_nodes[j]) {
+            let afterA =
+              (this.prune_index + 1 + this.prune_nodes.length) %
+              this.prune_nodes.length;
+            let beforeB =
+              (j - 1 + this.prune_nodes.length) % this.prune_nodes.length;
             if (beforeB < afterA + 1) {
-              let subset = nodes.slice(beforeB, afterA + 1);
+              let subset = this.prune_nodes.slice(beforeB, afterA + 1);
               if (subset.length == 1) {
                 if (LOG_PRUNE) {
-                  console.log("Removed double end:", nodes.pop());
+                  console.log("Removed double end:", this.prune_nodes.pop());
                 } else {
-                  nodes.pop();
+                  this.prune_nodes.pop();
                 }
                 break;
               }
               if (LOG_PRUNE) {
-                console.log("i,j          :", i, j);
-                console.log("Node         :", nodes[i]);
+                console.log("i,j          :", this.prune_index, j);
+                console.log(
+                  "Node         :",
+                  this.prune_nodes[this.prune_index]
+                );
                 console.log("Subset       :", subset);
               }
               let nodePaths = [
@@ -365,38 +445,82 @@ class Graph {
                 console.log("Min Edge     :", nodePaths[minEdgeIndex]);
                 console.log("Min Weight   :", minWeight);
               }
-              nodes.splice(beforeB, subset.length, ...nodePaths[minEdgeIndex]);
-              i = -1;
-              visited = [];
+              if (PART_UPDATE) {
+                // stroke(PALLETTE.green);
+                // drawEdges(minEdges);
+              }
+              this.prune_nodes.splice(
+                beforeB,
+                subset.length,
+                ...nodePaths[minEdgeIndex]
+              );
+              this.prune_index = -1;
+              this.prune_visited = [];
             }
           }
         }
       }
-    }
-    let ordered = [];
-    for (let i = 0; i < nodes.length - 1; i++) {
-      ordered.push(new Edge(this.nodes[nodes[i]], this.nodes[nodes[i + 1]]));
-    }
-    let end = new Date();
-    if (LOG_PRUNE || LOG_TIMING) {
-      if (LOG_PRUNE) {
-        console.log("Pruned       :", nodes);
+      this.prune_index++;
+      if (PART_UPDATE) {
+        break;
       }
-      //           PRUNE in   :
-      //           PRUNE iter :
-      //           PRUNE it/in:
-      console.log("PRUNE in   : " + (end - start) + "ms");
-      console.log("PRUNE iter : " + formatNumber(iter));
-      console.log(
-        "PRUNE it/in: " +
-          formatNumber(
-            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
-              100
-          )
-      );
     }
-    this.remove_edges();
-    this.add_edges(ordered);
+    if (PART_UPDATE) {
+      if (this.prune_index == this.prune_nodes.length) {
+        let ordered = [];
+        for (let i = 0; i < this.prune_nodes.length - 1; i++) {
+          ordered.push(
+            new Edge(
+              this.nodes[this.prune_nodes[i]],
+              this.nodes[this.prune_nodes[i + 1]]
+            )
+          );
+        }
+        this.remove_edges();
+        this.add_edges(ordered);
+        this.currentState = "done";
+        console.log("done");
+        console.log(this.prune_nodes);
+
+        // Redraw everything
+        background(BACKGROUND_COLOR);
+        stroke(PALLETTE.red);
+        drawEdges(this.walk_ordered);
+        stroke(PALLETTE.green);
+        drawEdges(this.edges);
+      }
+    } else {
+      let ordered = [];
+      for (let i = 0; i < this.prune_nodes.length - 1; i++) {
+        ordered.push(
+          new Edge(
+            this.nodes[this.prune_nodes[i]],
+            this.nodes[this.prune_nodes[i + 1]]
+          )
+        );
+      }
+      this.remove_edges();
+      this.add_edges(ordered);
+      let end = new Date();
+      if (LOG_PRUNE || LOG_TIMING) {
+        if (LOG_PRUNE) {
+          console.log("Pruned       :", this.prune_nodes);
+        }
+        //           PRUNE in   :
+        //           PRUNE iter :
+        //           PRUNE it/in:
+        console.log("PRUNE in   : " + (end - start) + "ms");
+        console.log("PRUNE iter : " + formatNumber(this.prune_iter));
+        console.log(
+          "PRUNE it/in: " +
+            formatNumber(
+              Math.floor(
+                (this.prune_iter * 100) / (end - start == 0 ? 1 : end - start)
+              ) / 100
+            )
+        );
+      }
+    }
   }
   christofides() {
     // MST
@@ -412,5 +536,33 @@ class Graph {
     console.log("MST  :", mst_weight);
     console.log("DONE :", finished_weight);
     console.log("RATIO:", finished_weight / mst_weight);
+  }
+  update() {
+    switch (this.currentState) {
+      case "mst":
+        {
+          console.log("mst");
+          this.minSpanTree();
+        }
+        break;
+      case "pm":
+        {
+          console.log("pm");
+          this.perfectMatching();
+        }
+        break;
+      case "walk":
+        {
+          console.log("walk");
+          this.walkCycle();
+        }
+        break;
+      case "prune":
+        {
+          console.log("prune");
+          this.prune();
+        }
+        break;
+    }
   }
 }
