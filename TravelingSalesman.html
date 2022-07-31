@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <title>Traveling Salesman</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/p5.js"></script>
+    <script src="TravelingSalesman/node_edge.js"></script>
+    <script src="TravelingSalesman/graph.js"></script>
+    <script>
+      const CANVAS_WIDTH = 700;
+      const CANVAS_HEIGHT = 700;
+      const BACKGROUND_COLOR = "#646464";
+      const NODE_COUNT = 500;
+      const EDGE_COUNT = 0;
+      const NODE_SIZE = 20;
+      
+      const LOG_MST = false;
+      const LOG_PM = false;
+      const LOG_WALK = false;
+      const LOG_PRUNE = false;
+      const LOG_ALL_EDGES = false;
+
+      const PALLETTE = {
+        red: "#fda1ac",
+        orange: "#fed8ac",
+        yellow: "#ffffac",
+        green: "#aeffbc",
+        blue: "#add9ff",
+        purple: "#b19cd8",
+      };
+      function setup() {
+        // randomSeed(22);
+        createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+        background(BACKGROUND_COLOR);
+        strokeWeight(2);
+        let solving = new Graph(NODE_COUNT, EDGE_COUNT);
+        solving.christofides();
+        stroke(PALLETTE.blue);
+        drawEdges(solving.edges);
+        drawNodes(solving.nodes);
+      }
+      function draw() {}
+    </script>
+  </head>
+  <body style="background-color: #646464">
+    <main></main>
+  </body>
+</html>
