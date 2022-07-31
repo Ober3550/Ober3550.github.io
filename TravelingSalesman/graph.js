@@ -160,7 +160,7 @@ class Graph {
           formatNumber(Math.floor((iter * 100) / (end - start)) / 100)
       );
     }
-    solving.add_edges(min_matching);
+    this.add_edges(min_matching);
   }
   walkCycle() {
     let start = new Date();
