@@ -44,13 +44,15 @@
           drawNodes(solving.nodes);
           let end = new Date();
           console.log("Total time: " + (end - start) + "ms");
+        } else {
+          frameRate(10);
+          stroke(PALLETTE.blue);
+          drawNodes(solving.nodes);
         }
       }
       function draw() {
         if (PART_UPDATE) {
           solving.update();
-          stroke(PALLETTE.blue);
-          drawNodes(solving.nodes);
         }
       }
     </script>

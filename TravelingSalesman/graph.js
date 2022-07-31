@@ -32,6 +32,7 @@ class Graph {
     this.pm_attempts = 0;
     this.pm_min_matching = [];
     this.pm_min_weight = Infinity;
+    this.pm_draw_index = 0;
     this.pm_iter = 0;
     this.walk_current = 0;
     this.walk_ordered = [];
@@ -41,6 +42,7 @@ class Graph {
     this.prune_visited = [];
     this.prune_rotated = false;
     this.prune_index = 0;
+    this.prune_prev_index = 0;
   }
   add_edges(edges) {
     for (let i = 0; i < edges.length; i++) {
@@ -84,6 +86,8 @@ class Graph {
       if (PART_UPDATE) {
         stroke(PALLETTE.blue);
         min_edge.draw();
+        min_edge.a.draw();
+        min_edge.b.draw();
       }
       this.add_edge(min_edge);
       let idxA = min_edge.a.index;
@@ -180,14 +184,16 @@ class Graph {
         }
       }
       this.pm_attempts++;
-      if (PART_UPDATE) {
-        break;
-      }
     }
     if (PART_UPDATE) {
-      if (this.pm_attempts == MAX_ATTEMPTS) {
+      if (this.pm_draw_index < this.pm_min_matching.length) {
         stroke(PALLETTE.yellow);
-        drawEdges(this.pm_min_matching);
+        let drawEdge = this.pm_min_matching[this.pm_draw_index];
+        drawEdge.draw();
+        drawEdge.a.draw();
+        drawEdge.b.draw();
+        this.pm_draw_index++;
+      } else {
         this.add_edges(this.pm_min_matching);
         this.currentState = "walk";
       }
@@ -226,17 +232,25 @@ class Graph {
           if (PART_UPDATE) {
             stroke(PALLETTE.red);
             this.edges[i].draw();
+            stroke(PALLETTE.blue);
+            this.nodes[this.walk_current].draw();
           }
           noEdges = false;
           this.walk_ordered.push(this.edges[i]);
           this.edges.splice(i, 1);
           this.walk_current =
             this.walk_ordered[this.walk_ordered.length - 1].b.index;
+          if (PART_UPDATE) {
+            stroke(PALLETTE.red);
+            this.nodes[this.walk_current].draw();
+          }
           break;
         } else if (this.edges[i].b.index == this.walk_current) {
           if (PART_UPDATE) {
             stroke(PALLETTE.red);
             this.edges[i].draw();
+            stroke(PALLETTE.blue);
+            this.nodes[this.walk_current].draw();
           }
           noEdges = false;
           let temp = this.edges[i].a;
@@ -246,14 +260,26 @@ class Graph {
           this.walk_current =
             this.walk_ordered[this.walk_ordered.length - 1].b.index;
           this.edges.splice(i, 1);
+          if (PART_UPDATE) {
+            stroke(PALLETTE.red);
+            this.nodes[this.walk_current].draw();
+          }
           break;
         }
       }
       if (noEdges) {
+        if (PART_UPDATE) {
+          stroke(PALLETTE.blue);
+          this.nodes[this.walk_current].draw();
+        }
         // Rotate the array because the ordered list has created a closed cycle
         this.walk_ordered = arrayRotate(this.walk_ordered);
         this.walk_current =
           this.walk_ordered[this.walk_ordered.length - 1].b.index;
+        if (PART_UPDATE) {
+          stroke(PALLETTE.red);
+          this.nodes[this.walk_current].draw();
+        }
       }
       if (PART_UPDATE) {
         break;
@@ -300,6 +326,18 @@ class Graph {
       this.prune_index = this.prune_nodes.length;
     }
     while (this.prune_index < this.prune_nodes.length) {
+      while(this.prune_index < this.prune_prev_index-1){
+        if (
+          !this.prune_visited.includes(this.prune_nodes[this.prune_index]) ||
+          this.prune_index == this.prune_nodes.length - 1
+        ) {
+          this.prune_visited.push(this.prune_nodes[this.prune_index]);
+        }else{
+          // Break early
+          break;
+        }
+        this.prune_index++;
+      }
       if (
         this.prune_index == this.prune_nodes.length - 1 &&
         !this.prune_rotated
@@ -315,6 +353,7 @@ class Graph {
           this.prune_nodes[this.prune_nodes.length - 1]
         );
         this.prune_rotated = true;
+        this.prune_prev_index = this.prune_index;
         this.prune_index = -1;
         this.prune_visited = [];
         if (LOG_PRUNE) {
@@ -328,7 +367,7 @@ class Graph {
         this.prune_visited.push(this.prune_nodes[this.prune_index]);
         if (PART_UPDATE && this.prune_index > 0) {
           let part_edge = new Edge(
-            this.nodes[this.prune_nodes[this.prune_index-1]],
+            this.nodes[this.prune_nodes[this.prune_index - 1]],
             this.nodes[this.prune_nodes[this.prune_index]]
           );
           stroke(PALLETTE.green);
@@ -446,14 +485,15 @@ class Graph {
                 console.log("Min Weight   :", minWeight);
               }
               if (PART_UPDATE) {
-                // stroke(PALLETTE.green);
-                // drawEdges(minEdges);
+                stroke(PALLETTE.green);
+                drawEdges(minEdges);
               }
               this.prune_nodes.splice(
                 beforeB,
                 subset.length,
                 ...nodePaths[minEdgeIndex]
               );
+              this.prune_prev_index = this.prune_index;
               this.prune_index = -1;
               this.prune_visited = [];
             }
@@ -484,10 +524,9 @@ class Graph {
 
         // Redraw everything
         background(BACKGROUND_COLOR);
-        // stroke(PALLETTE.red);
-        // drawEdges(this.walk_ordered);
         stroke(PALLETTE.blue);
         drawEdges(this.edges);
+        drawNodes(this.nodes);
       }
     } else {
       let ordered = [];
