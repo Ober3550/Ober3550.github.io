@@ -86,12 +86,18 @@ class Graph {
     this.remove_edges();
     this.add_edges(new_edges);
     let end = new Date();
-    if (LOG_MST) {
-      console.log("MST took: " + (end - start) + "ms");
-      console.log("MST iterations: " + formatNumber(iter));
+    if (LOG_MST || LOG_TIMING) {
+      //           MST   in   :
+      //           MST   iter :
+      //           MST   it/in:
+      console.log("MST   in   : " + (end - start) + "ms");
+      console.log("MST   iter : " + formatNumber(iter));
       console.log(
-        "Iter/ms: " +
-          formatNumber(Math.floor((iter * 100) / (end - start)) / 100)
+        "MST   it/in: " +
+          formatNumber(
+            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
+              100
+          )
       );
     }
   }
@@ -151,13 +157,21 @@ class Graph {
       attempts++;
     }
     let end = new Date();
-    if (LOG_PM) {
-      console.log("Attempts:", MAX_ATTEMPTS);
-      console.log("Perfect matching: " + (end - start) + "ms");
-      console.log("Perfect matching iterations: " + formatNumber(iter));
+    if (LOG_PM || LOG_TIMING) {
+      if (LOG_PM) {
+        console.log("Attempts:", MAX_ATTEMPTS);
+      }
+      //           PM    in   :
+      //           PM    iter :
+      //           PM    it/in:
+      console.log("PM    in   : " + (end - start) + "ms");
+      console.log("PM    iter : " + formatNumber(iter));
       console.log(
-        "Iter/ms: " +
-          formatNumber(Math.floor((iter * 100) / (end - start)) / 100)
+        "PM    it/in: " +
+          formatNumber(
+            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
+              100
+          )
       );
     }
     this.add_edges(min_matching);
@@ -166,9 +180,11 @@ class Graph {
     let start = new Date();
     let current = 0;
     let ordered = [];
+    let iter = 0;
     while (this.edges.length > 0) {
       let noEdges = true;
       for (let i = 0; i < this.edges.length; i++) {
+        iter++;
         if (this.edges[i].a.index == current) {
           noEdges = false;
           ordered.push(this.edges[i]);
@@ -193,8 +209,19 @@ class Graph {
       }
     }
     let end = new Date();
-    if (LOG_WALK) {
-      console.log("Walked cycle: " + (end - start) + "ms");
+    if (LOG_WALK || LOG_TIMING) {
+      //           WALK  in   :
+      //           WALK  iter :
+      //           WALK  it/in:
+      console.log("WALK  in   : " + (end - start) + "ms");
+      console.log("WALK  iter : " + formatNumber(iter));
+      console.log(
+        "WALK  it/in: " +
+          formatNumber(
+            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
+              100
+          )
+      );
     }
     this.remove_edges;
     this.add_edges(ordered);
@@ -204,6 +231,7 @@ class Graph {
     let nodes = this.edges.map((x) => {
       return x.a.index;
     });
+    let iter = 0;
     // Draw edges of previous cycle to demonstrate pruning
     stroke(PALLETTE.red);
     drawEdges(this.edges);
@@ -232,13 +260,22 @@ class Graph {
         visited.push(nodes[i]);
       } else {
         for (let j = i - 1; j >= 0; j--) {
-          if (nodes[i] == nodes[j] && i != nodes.length - 1) {
+          iter++;
+          if (nodes[i] == nodes[j]) {
             let beforeA = (i - 1 + nodes.length) % nodes.length;
             let afterA = (i + 1 + nodes.length) % nodes.length;
             let beforeB = (j - 1 + nodes.length) % nodes.length;
             let afterB = (j + 1 + nodes.length) % nodes.length;
             if (beforeB < afterA + 1) {
               let subset = nodes.slice(beforeB, afterA + 1);
+              if (subset.length == 1) {
+                if (LOG_PRUNE) {
+                  console.log("Removed double end:", nodes.pop());
+                } else {
+                  nodes.pop();
+                }
+                break;
+              }
               if (LOG_PRUNE) {
                 console.log("i,j          :", i, j);
                 console.log("Node         :", nodes[i]);
@@ -341,9 +378,22 @@ class Graph {
       ordered.push(new Edge(this.nodes[nodes[i]], this.nodes[nodes[i + 1]]));
     }
     let end = new Date();
-    if (LOG_PRUNE) {
-      console.log("Pruned       :", nodes);
-      console.log("Pruned in    :" + (end - start) + "ms");
+    if (LOG_PRUNE || LOG_TIMING) {
+      if (LOG_PRUNE) {
+        console.log("Pruned       :", nodes);
+      }
+      //           PRUNE in   :
+      //           PRUNE iter :
+      //           PRUNE it/in:
+      console.log("PRUNE in   : " + (end - start) + "ms");
+      console.log("PRUNE iter : " + formatNumber(iter));
+      console.log(
+        "PRUNE it/in: " +
+          formatNumber(
+            Math.floor((iter * 100) / (end - start == 0 ? 1 : end - start)) /
+              100
+          )
+      );
     }
     this.remove_edges();
     this.add_edges(ordered);
