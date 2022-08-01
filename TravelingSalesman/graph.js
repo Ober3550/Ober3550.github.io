@@ -23,6 +23,7 @@ class Graph {
     this.nodes = nodes;
     this.edges = edges;
     this.weight = weight;
+    this.previousState = "";
     this.currentState = "mst";
     this.mst_visited = [0];
     this.mst_unvisited = [...Array(this.nodes.length).keys()].slice(1);
@@ -43,6 +44,9 @@ class Graph {
     this.prune_rotated = false;
     this.prune_index = 0;
     this.prune_prev_index = 0;
+    this.cross_swapped = [];
+    this.cross_found = false;
+    this.cross_any = true;
   }
   add_edges(edges) {
     for (let i = 0; i < edges.length; i++) {
@@ -287,8 +291,17 @@ class Graph {
     }
     if (PART_UPDATE) {
       if (this.edges.length == 0) {
-        this.currentState = "prune";
-        this.add_edges(this.walk_ordered);
+        if (this.previousState == "cross") {
+          this.currentState = "cross";
+          this.cross_swapped = [];
+          this.cross_found = true;
+          this.remove_edges();
+          this.add_edges(this.walk_ordered);
+        } else {
+          this.currentState = "prune";
+          this.remove_edges();
+          this.add_edges(this.walk_ordered);
+        }
       }
     } else {
       this.add_edges(this.walk_ordered);
@@ -326,13 +339,13 @@ class Graph {
       this.prune_index = this.prune_nodes.length;
     }
     while (this.prune_index < this.prune_nodes.length) {
-      while(this.prune_index < this.prune_prev_index-1){
+      while (this.prune_index < this.prune_prev_index - 1) {
         if (
           !this.prune_visited.includes(this.prune_nodes[this.prune_index]) ||
           this.prune_index == this.prune_nodes.length - 1
         ) {
           this.prune_visited.push(this.prune_nodes[this.prune_index]);
-        }else{
+        } else {
           // Break early
           break;
         }
@@ -518,8 +531,7 @@ class Graph {
         }
         this.remove_edges();
         this.add_edges(ordered);
-        this.currentState = "done";
-        console.log("done");
+        this.currentState = "cross";
         console.log(this.prune_nodes);
 
         // Redraw everything
@@ -558,6 +570,130 @@ class Graph {
               ) / 100
             )
         );
+      }
+    }
+  }
+  mc(edge) {
+    let x1 = edge.a.x;
+    let x2 = edge.b.x;
+    let y1 = edge.a.y;
+    let y2 = edge.b.y;
+    if (x1 > x2) {
+      let tempx = x1;
+      let tempy = y1;
+      x1 = x2;
+      y1 = y2;
+      x2 = tempx;
+      y2 = tempy;
+    }
+    // rise over run
+    let m = (y2 - y1) / (x2 - x1);
+    let c = y1 - m * x1;
+    return { m: m, c: c };
+  }
+  intersect(edgeA, edgeB) {
+    // m1x+c1 = m2x+c2
+    // m1x-m2x = c2 - c1
+    // x(m1-m2) = c2 - c1
+    // x = (c2-c1)/(m1-m2)
+    let AMC = this.mc(edgeA);
+    let BMC = this.mc(edgeB);
+    let intersectX = (BMC.c - AMC.c) / (AMC.m - BMC.m);
+    let intersectY = AMC.m * intersectX + AMC.c;
+    if (
+      intersectX > Math.min(edgeA.a.x, edgeA.b.x) &&
+      intersectX < Math.max(edgeA.a.x, edgeA.b.x) &&
+      intersectY > Math.min(edgeA.a.y, edgeA.b.y) &&
+      intersectY < Math.max(edgeA.a.y, edgeA.b.y) &&
+      intersectX > Math.min(edgeB.a.x, edgeB.b.x) &&
+      intersectX < Math.max(edgeB.a.x, edgeB.b.x) &&
+      intersectY > Math.min(edgeB.a.y, edgeB.b.y) &&
+      intersectY < Math.max(edgeB.a.y, edgeB.b.y)
+    ) {
+      stroke(PALLETTE.red);
+      circle(intersectX, intersectY, 5);
+      return true;
+    }
+    return false;
+  }
+  cross() {
+    this.cross_found = false;
+    // Mark the edges that intersect with other edges
+    // These are most likely the edges picked when doing the odd node matching
+    for (let i = 0; i < this.edges.length; i++) {
+      for (let j = 0; j < this.edges.length; j++) {
+        if (i != j) {
+          let nodeEdge = this.edges[i];
+          let testEdge = this.edges[j];
+          if (
+            !this.cross_swapped.includes(nodeEdge.a.index) &&
+            !this.cross_swapped.includes(nodeEdge.b.index) &&
+            !this.cross_swapped.includes(testEdge.a.index) &&
+            !this.cross_swapped.includes(testEdge.b.index)
+          ) {
+            let nodes = [nodeEdge.a, nodeEdge.b];
+            if (!nodes.includes(testEdge.a) && !nodes.includes(testEdge.b)) {
+              let crossed = this.intersect(nodeEdge, testEdge);
+              if (crossed) {
+                let newEdgeA = new Edge(nodeEdge.a, testEdge.a);
+                let newEdgeB = new Edge(nodeEdge.b, testEdge.b);
+                // Remove edges from nodes
+                let nodeAEdgeIdx = nodeEdge.a.edges.indexOf(nodeEdge);
+                let nodeBEdgeIdx = nodeEdge.b.edges.indexOf(nodeEdge);
+                let testAEdgeIdx = testEdge.a.edges.indexOf(testEdge);
+                let testBEdgeIdx = testEdge.b.edges.indexOf(testEdge);
+                let nodeEdgeIdx = this.edges.indexOf(nodeEdge);
+                let testEdgeIdx = this.edges.indexOf(testEdge);
+                let allIdx = [
+                  nodeAEdgeIdx,
+                  nodeBEdgeIdx,
+                  testAEdgeIdx,
+                  testBEdgeIdx,
+                  nodeEdgeIdx,
+                  testEdgeIdx,
+                ];
+                if (allIdx.includes(-1)) {
+                  console.log(allIdx);
+                  // Abort an edge was removed prematurely
+                  return;
+                }
+                nodeEdge.a.edges.splice(nodeAEdgeIdx, 1, newEdgeA);
+                nodeEdge.b.edges.splice(nodeBEdgeIdx, 1, newEdgeB);
+                testEdge.a.edges.splice(testAEdgeIdx, 1, newEdgeA);
+                testEdge.b.edges.splice(testBEdgeIdx, 1, newEdgeB);
+                this.edges.splice(nodeEdgeIdx, 1, newEdgeA);
+                this.edges.splice(testEdgeIdx, 1, newEdgeB);
+                // Lazy solution to issue where post swapping the cycle may not be walkable on second cut.
+                this.cross_swapped.push(nodeEdge.a.index);
+                this.cross_swapped.push(nodeEdge.b.index);
+                this.cross_swapped.push(testEdge.a.index);
+                this.cross_swapped.push(testEdge.b.index);
+                console.log(
+                  "Crossed:",
+                  nodeEdge.a.index,
+                  nodeEdge.b.index,
+                  testEdge.a.index,
+                  testEdge.b.index
+                );
+                // background(BACKGROUND_COLOR);
+                stroke(BACKGROUND_COLOR);
+                nodeEdge.draw();
+                testEdge.draw();
+                stroke(PALLETTE.blue);
+                newEdgeA.draw();
+                newEdgeB.draw();
+                stroke(PALLETTE.red);
+                newEdgeA.a.draw();
+                newEdgeA.b.draw();
+                newEdgeB.a.draw();
+                newEdgeB.b.draw();
+                this.cross_found = true;
+                this.cross_any = true;
+                return;
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -600,6 +736,28 @@ class Graph {
         {
           console.log("prune");
           this.prune();
+        }
+        break;
+      case "cross":
+        {
+          if (this.cross_found == false) {
+            background(BACKGROUND_COLOR);
+            stroke(PALLETTE.blue);
+            drawEdges(this.edges);
+            drawNodes(this.nodes);
+            if (this.cross_any == false) {
+              this.currentState = "done";
+              return;
+            }
+            console.log("Walking edges:", this.edges.length);
+            PART_UPDATE = true;
+            this.walk_ordered = [];
+            this.previousState = "cross";
+            this.currentState = "walk";
+            this.cross_any = false;
+          } else {
+            this.cross();
+          }
         }
         break;
     }

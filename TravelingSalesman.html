@@ -8,18 +8,18 @@
       const CANVAS_WIDTH = 700;
       const CANVAS_HEIGHT = 700;
       const BACKGROUND_COLOR = "#646464";
-      const NODE_COUNT = 50;
+      const NODE_COUNT = 100;
       const EDGE_COUNT = 0;
       const NODE_SIZE = 20;
 
       const LOG_MST = false;
       const LOG_PM = false;
       const LOG_WALK = false;
-      const LOG_PRUNE = false;
+      const LOG_PRUNE = false;  
       const LOG_ALL_EDGES = false;
       const LOG_TIMING = true;
 
-      const PART_UPDATE = true;
+      let PART_UPDATE = true;
 
       const PALLETTE = {
         red: "#fda1ac",
@@ -44,8 +44,8 @@
           drawNodes(solving.nodes);
           let end = new Date();
           console.log("Total time: " + (end - start) + "ms");
+          solving.currentState = "cross";
         } else {
-          frameRate(10);
           stroke(PALLETTE.blue);
           drawNodes(solving.nodes);
         }
