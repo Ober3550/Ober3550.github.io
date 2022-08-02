@@ -25,9 +25,29 @@ class Edge {
     this.a = a;
     this.b = b;
     this.weight = a.dist(b);
+    this.m;
+    this.c;
+    this.mc();
   }
   draw() {
     line(this.a.x, this.a.y, this.b.x, this.b.y);
+  }
+  mc() {
+    let x1 = this.a.x;
+    let x2 = this.b.x;
+    let y1 = this.a.y;
+    let y2 = this.b.y;
+    if (x1 > x2) {
+      let tempx = x1;
+      let tempy = y1;
+      x1 = x2;
+      y1 = y2;
+      x2 = tempx;
+      y2 = tempy;
+    }
+    // rise over run
+    this.m = (y2 - y1) / (x2 - x1);
+    this.c = y1 - this.m * x1;
   }
 }
 function nodeEdgeWeights(nodes) {

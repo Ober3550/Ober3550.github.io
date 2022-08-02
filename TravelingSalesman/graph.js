@@ -38,6 +38,7 @@ class Graph {
     this.walk_current = 0;
     this.walk_ordered = [];
     this.walk_iter = 0;
+    this.walk_last_iter = 0;
     this.prune_nodes;
     this.prune_iter = 0;
     this.prune_visited = [];
@@ -47,6 +48,8 @@ class Graph {
     this.cross_swapped = [];
     this.cross_found = false;
     this.cross_any = true;
+    this.cross_iter = 0;
+    this.cross_last_iter = 0;
   }
   add_edges(edges) {
     for (let i = 0; i < edges.length; i++) {
@@ -229,6 +232,13 @@ class Graph {
   walkCycle() {
     let start = new Date();
     while (this.edges.length > 0) {
+      if (
+        !PART_UPDATE &&
+        this.walk_iter - this.walk_last_iter >
+          this.nodes.length * this.nodes.length
+      ) {
+        return false;
+      }
       let noEdges = true;
       for (let i = 0; i < this.edges.length; i++) {
         this.walk_iter++;
@@ -289,39 +299,45 @@ class Graph {
         break;
       }
     }
+    this.cross_swapped = [];
+    this.cross_found = true;
     if (PART_UPDATE) {
       if (this.edges.length == 0) {
         if (this.previousState == "cross") {
           this.currentState = "cross";
-          this.cross_swapped = [];
-          this.cross_found = true;
-          this.remove_edges();
-          this.add_edges(this.walk_ordered);
         } else {
           this.currentState = "prune";
-          this.remove_edges();
-          this.add_edges(this.walk_ordered);
         }
+        this.remove_edges();
+        this.add_edges(this.walk_ordered);
+        this.walk_ordered = [];
       }
     } else {
+      this.remove_edges();
       this.add_edges(this.walk_ordered);
+      this.walk_ordered = [];
       let end = new Date();
       if (LOG_WALK || LOG_TIMING) {
         //           WALK  in   :
         //           WALK  iter :
         //           WALK  it/in:
         console.log("WALK  in   : " + (end - start) + "ms");
-        console.log("WALK  iter : " + formatNumber(this.walk_iter));
+        console.log(
+          "WALK  iter : " + formatNumber(this.walk_iter - this.walk_last_iter)
+        );
         console.log(
           "WALK  it/in: " +
             formatNumber(
               Math.floor(
-                (this.walk_iter * 100) / (end - start == 0 ? 1 : end - start)
+                ((this.walk_iter - this.walk_last_iter) * 100) /
+                  (end - start == 0 ? 1 : end - start)
               ) / 100
             )
         );
       }
+      this.walk_last_iter = this.walk_iter;
     }
+    return true;
   }
   prune() {
     let start = new Date();
@@ -532,7 +548,6 @@ class Graph {
         this.remove_edges();
         this.add_edges(ordered);
         this.currentState = "cross";
-        console.log(this.prune_nodes);
 
         // Redraw everything
         background(BACKGROUND_COLOR);
@@ -573,128 +588,148 @@ class Graph {
       }
     }
   }
-  mc(edge) {
-    let x1 = edge.a.x;
-    let x2 = edge.b.x;
-    let y1 = edge.a.y;
-    let y2 = edge.b.y;
-    if (x1 > x2) {
-      let tempx = x1;
-      let tempy = y1;
-      x1 = x2;
-      y1 = y2;
-      x2 = tempx;
-      y2 = tempy;
-    }
-    // rise over run
-    let m = (y2 - y1) / (x2 - x1);
-    let c = y1 - m * x1;
-    return { m: m, c: c };
-  }
   intersect(edgeA, edgeB) {
     // m1x+c1 = m2x+c2
     // m1x-m2x = c2 - c1
     // x(m1-m2) = c2 - c1
     // x = (c2-c1)/(m1-m2)
-    let AMC = this.mc(edgeA);
-    let BMC = this.mc(edgeB);
-    let intersectX = (BMC.c - AMC.c) / (AMC.m - BMC.m);
-    let intersectY = AMC.m * intersectX + AMC.c;
+    let intersectX = (edgeB.c - edgeA.c) / (edgeA.m - edgeB.m);
+    let intersectY = edgeA.m * intersectX + edgeA.c;
     if (
-      intersectX > Math.min(edgeA.a.x, edgeA.b.x) &&
-      intersectX < Math.max(edgeA.a.x, edgeA.b.x) &&
-      intersectY > Math.min(edgeA.a.y, edgeA.b.y) &&
-      intersectY < Math.max(edgeA.a.y, edgeA.b.y) &&
-      intersectX > Math.min(edgeB.a.x, edgeB.b.x) &&
-      intersectX < Math.max(edgeB.a.x, edgeB.b.x) &&
-      intersectY > Math.min(edgeB.a.y, edgeB.b.y) &&
-      intersectY < Math.max(edgeB.a.y, edgeB.b.y)
+      intersectX >= Math.min(edgeA.a.x, edgeA.b.x) &&
+      intersectX <= Math.max(edgeA.a.x, edgeA.b.x) &&
+      intersectY >= Math.min(edgeA.a.y, edgeA.b.y) &&
+      intersectY <= Math.max(edgeA.a.y, edgeA.b.y) &&
+      intersectX >= Math.min(edgeB.a.x, edgeB.b.x) &&
+      intersectX <= Math.max(edgeB.a.x, edgeB.b.x) &&
+      intersectY >= Math.min(edgeB.a.y, edgeB.b.y) &&
+      intersectY <= Math.max(edgeB.a.y, edgeB.b.y)
     ) {
-      stroke(PALLETTE.red);
-      circle(intersectX, intersectY, 5);
+      if (PART_UPDATE) {
+        stroke(PALLETTE.red);
+        circle(intersectX, intersectY, 5);
+      }
       return true;
     }
     return false;
   }
   cross() {
+    let start = new Date();
     this.cross_found = false;
+    let crossing = true;
     // Mark the edges that intersect with other edges
     // These are most likely the edges picked when doing the odd node matching
-    for (let i = 0; i < this.edges.length; i++) {
-      for (let j = 0; j < this.edges.length; j++) {
-        if (i != j) {
-          let nodeEdge = this.edges[i];
-          let testEdge = this.edges[j];
-          if (
-            !this.cross_swapped.includes(nodeEdge.a.index) &&
-            !this.cross_swapped.includes(nodeEdge.b.index) &&
-            !this.cross_swapped.includes(testEdge.a.index) &&
-            !this.cross_swapped.includes(testEdge.b.index)
-          ) {
-            let nodes = [nodeEdge.a, nodeEdge.b];
-            if (!nodes.includes(testEdge.a) && !nodes.includes(testEdge.b)) {
-              let crossed = this.intersect(nodeEdge, testEdge);
-              if (crossed) {
-                let newEdgeA = new Edge(nodeEdge.a, testEdge.a);
-                let newEdgeB = new Edge(nodeEdge.b, testEdge.b);
-                // Remove edges from nodes
-                let nodeAEdgeIdx = nodeEdge.a.edges.indexOf(nodeEdge);
-                let nodeBEdgeIdx = nodeEdge.b.edges.indexOf(nodeEdge);
-                let testAEdgeIdx = testEdge.a.edges.indexOf(testEdge);
-                let testBEdgeIdx = testEdge.b.edges.indexOf(testEdge);
-                let nodeEdgeIdx = this.edges.indexOf(nodeEdge);
-                let testEdgeIdx = this.edges.indexOf(testEdge);
-                let allIdx = [
-                  nodeAEdgeIdx,
-                  nodeBEdgeIdx,
-                  testAEdgeIdx,
-                  testBEdgeIdx,
-                  nodeEdgeIdx,
-                  testEdgeIdx,
-                ];
-                if (allIdx.includes(-1)) {
-                  console.log(allIdx);
-                  // Abort an edge was removed prematurely
-                  return;
+    while (crossing) {
+      crossing = false;
+      for (let i = 0; i < this.edges.length; i++) {
+        for (let j = 0; j < this.edges.length; j++) {
+          if (i != j) {
+            let nodeEdge = this.edges[i];
+            let testEdge = this.edges[j];
+            if (
+              !this.cross_swapped.includes(nodeEdge.a.index) &&
+              !this.cross_swapped.includes(nodeEdge.b.index) &&
+              !this.cross_swapped.includes(testEdge.a.index) &&
+              !this.cross_swapped.includes(testEdge.b.index)
+            ) {
+              let nodes = [nodeEdge.a, nodeEdge.b];
+              if (!nodes.includes(testEdge.a) && !nodes.includes(testEdge.b)) {
+                this.cross_iter++;
+                let crossed = this.intersect(nodeEdge, testEdge);
+                if (crossed) {
+                  let newEdgeA = new Edge(nodeEdge.a, testEdge.a);
+                  let newEdgeB = new Edge(nodeEdge.b, testEdge.b);
+                  // Remove edges from nodes
+                  let nodeAEdgeIdx = nodeEdge.a.edges.indexOf(nodeEdge);
+                  let nodeBEdgeIdx = nodeEdge.b.edges.indexOf(nodeEdge);
+                  let testAEdgeIdx = testEdge.a.edges.indexOf(testEdge);
+                  let testBEdgeIdx = testEdge.b.edges.indexOf(testEdge);
+                  let nodeEdgeIdx = this.edges.indexOf(nodeEdge);
+                  let testEdgeIdx = this.edges.indexOf(testEdge);
+                  let allIdx = [
+                    nodeAEdgeIdx,
+                    nodeBEdgeIdx,
+                    testAEdgeIdx,
+                    testBEdgeIdx,
+                    nodeEdgeIdx,
+                    testEdgeIdx,
+                  ];
+                  if (allIdx.includes(-1)) {
+                    console.log(allIdx);
+                    // Abort an edge was removed prematurely
+                    return;
+                  }
+                  nodeEdge.a.edges.splice(nodeAEdgeIdx, 1, newEdgeA);
+                  nodeEdge.b.edges.splice(nodeBEdgeIdx, 1, newEdgeB);
+                  testEdge.a.edges.splice(testAEdgeIdx, 1, newEdgeA);
+                  testEdge.b.edges.splice(testBEdgeIdx, 1, newEdgeB);
+                  this.edges.splice(nodeEdgeIdx, 1, newEdgeA);
+                  this.edges.splice(testEdgeIdx, 1, newEdgeB);
+                  // Lazy solution to issue where post swapping the cycle may not be walkable on second cut.
+                  this.cross_swapped.push(nodeEdge.a.index);
+                  this.cross_swapped.push(nodeEdge.b.index);
+                  this.cross_swapped.push(testEdge.a.index);
+                  this.cross_swapped.push(testEdge.b.index);
+                  if (LOG_CROSS) {
+                    console.log(
+                      "Crossed:",
+                      nodeEdge.a.index,
+                      nodeEdge.b.index,
+                      testEdge.a.index,
+                      testEdge.b.index
+                    );
+                  }
+                  // background(BACKGROUND_COLOR);
+                  if (PART_UPDATE) {
+                    stroke(BACKGROUND_COLOR);
+                    nodeEdge.draw();
+                    testEdge.draw();
+                    stroke(PALLETTE.blue);
+                    newEdgeA.draw();
+                    newEdgeB.draw();
+                    stroke(PALLETTE.red);
+                    newEdgeA.a.draw();
+                    newEdgeA.b.draw();
+                    newEdgeB.a.draw();
+                    newEdgeB.b.draw();
+                  }
+                  this.cross_found = true;
+                  this.cross_any = true;
+                  crossing = true;
+                  if (PART_UPDATE) {
+                    return;
+                  } else {
+                    break;
+                  }
                 }
-                nodeEdge.a.edges.splice(nodeAEdgeIdx, 1, newEdgeA);
-                nodeEdge.b.edges.splice(nodeBEdgeIdx, 1, newEdgeB);
-                testEdge.a.edges.splice(testAEdgeIdx, 1, newEdgeA);
-                testEdge.b.edges.splice(testBEdgeIdx, 1, newEdgeB);
-                this.edges.splice(nodeEdgeIdx, 1, newEdgeA);
-                this.edges.splice(testEdgeIdx, 1, newEdgeB);
-                // Lazy solution to issue where post swapping the cycle may not be walkable on second cut.
-                this.cross_swapped.push(nodeEdge.a.index);
-                this.cross_swapped.push(nodeEdge.b.index);
-                this.cross_swapped.push(testEdge.a.index);
-                this.cross_swapped.push(testEdge.b.index);
-                console.log(
-                  "Crossed:",
-                  nodeEdge.a.index,
-                  nodeEdge.b.index,
-                  testEdge.a.index,
-                  testEdge.b.index
-                );
-                // background(BACKGROUND_COLOR);
-                stroke(BACKGROUND_COLOR);
-                nodeEdge.draw();
-                testEdge.draw();
-                stroke(PALLETTE.blue);
-                newEdgeA.draw();
-                newEdgeB.draw();
-                stroke(PALLETTE.red);
-                newEdgeA.a.draw();
-                newEdgeA.b.draw();
-                newEdgeB.a.draw();
-                newEdgeB.b.draw();
-                this.cross_found = true;
-                this.cross_any = true;
-                return;
               }
             }
           }
         }
+        if (crossing) {
+          break;
+        }
       }
+    }
+    if (!PART_UPDATE) {
+      if (LOG_TIMING || LOG_CROSS) {
+        let end = new Date();
+        console.log("CROSS in   : " + (end - start) + "ms");
+        console.log(
+          "CROSS iter : " + formatNumber(this.cross_iter - this.cross_last_iter)
+        );
+        console.log(
+          "CROSS it/in: " +
+            formatNumber(
+              Math.floor(
+                ((this.cross_iter - this.cross_last_iter) * 100) /
+                  (end - start == 0 ? 1 : end - start)
+              ) / 100
+            )
+        );
+      }
+      this.cross_last_iter = this.cross_iter;
+      return this.cross_found;
     }
   }
   christofides() {
@@ -707,8 +742,18 @@ class Graph {
     this.perfectMatching();
     this.walkCycle();
     this.prune();
+    this.walkCycle();
+    let prune_weight = this.weight;
+    let crossing_walk = true;
+    while (crossing_walk) {
+      crossing_walk = this.cross();
+      if (!crossing_walk) break; // Skip another walk if nothing changed from last time
+      let success = this.walkCycle();
+      if (!success) break;
+    }
     let finished_weight = this.weight;
     console.log("MST  :", mst_weight);
+    console.log("PRUNE:", prune_weight);
     console.log("DONE :", finished_weight);
     console.log("RATIO:", finished_weight / mst_weight);
   }
@@ -740,18 +785,20 @@ class Graph {
         break;
       case "cross":
         {
+          console.log("cross");
           if (this.cross_found == false) {
             background(BACKGROUND_COLOR);
             stroke(PALLETTE.blue);
             drawEdges(this.edges);
             drawNodes(this.nodes);
             if (this.cross_any == false) {
+              this.prune_nodes = this.edges.map((x) => {
+                return x.a.index;
+              });
+              console.log(this.prune_nodes);
               this.currentState = "done";
               return;
             }
-            console.log("Walking edges:", this.edges.length);
-            PART_UPDATE = true;
-            this.walk_ordered = [];
             this.previousState = "cross";
             this.currentState = "walk";
             this.cross_any = false;

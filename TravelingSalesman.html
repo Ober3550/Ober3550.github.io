@@ -15,11 +15,12 @@
       const LOG_MST = false;
       const LOG_PM = false;
       const LOG_WALK = false;
-      const LOG_PRUNE = false;  
+      const LOG_PRUNE = false;
       const LOG_ALL_EDGES = false;
-      const LOG_TIMING = true;
+      const LOG_CROSS = false;
+      const LOG_TIMING = false;
 
-      let PART_UPDATE = true;
+      const PART_UPDATE = true;
 
       const PALLETTE = {
         red: "#fda1ac",
@@ -39,12 +40,23 @@
         if (!PART_UPDATE) {
           let start = new Date();
           solving.christofides();
+          background(BACKGROUND_COLOR);
           stroke(PALLETTE.blue);
           drawEdges(solving.edges);
           drawNodes(solving.nodes);
           let end = new Date();
-          console.log("Total time: " + (end - start) + "ms");
-          solving.currentState = "cross";
+          let total_iter =
+            solving.mst_iter +
+            solving.pm_iter +
+            solving.walk_iter +
+            solving.prune_iter +
+            solving.cross_iter;
+          console.log("Total iter : " + formatNumber(total_iter));
+          console.log("Total time : " + formatNumber(end - start) + "ms");
+          console.log(
+            "Total in/it: " +
+              formatNumber(Math.floor((total_iter * 100) / (end - start) / 100))
+          );
         } else {
           stroke(PALLETTE.blue);
           drawNodes(solving.nodes);
