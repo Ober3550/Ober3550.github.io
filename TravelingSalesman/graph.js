@@ -117,9 +117,11 @@ class Graph {
     }
     if (PART_UPDATE) {
       if (this.mst_unvisited.length == 0) {
+        this.mst_weight = this.weight;
         this.currentState = "pm";
       }
     } else {
+      this.mst_weight = this.weight;
       let end = new Date();
       if (LOG_MST || LOG_TIMING) {
         //           MST   in   :
@@ -594,7 +596,16 @@ class Graph {
     // x(m1-m2) = c2 - c1
     // x = (c2-c1)/(m1-m2)
     let intersectX = (edgeB.c - edgeA.c) / (edgeA.m - edgeB.m);
-    let intersectY = edgeA.m * intersectX + edgeA.c;
+    let intersectY;
+    if ((""+edgeA.m).includes("Infinity")) {
+      intersectX = edgeA.a.x;
+      intersectY = edgeB.m * intersectX + edgeB.c;
+    } else if ((""+edgeB.m).includes("Infinity")) {
+      intersectX = edgeB.a.x;
+      intersectY = edgeA.m * intersectX + edgeA.c;
+    } else {
+      intersectY = edgeA.m * intersectX + edgeA.c;
+    }
     if (
       intersectX >= Math.min(edgeA.a.x, edgeA.b.x) &&
       intersectX <= Math.max(edgeA.a.x, edgeA.b.x) &&
@@ -738,7 +749,6 @@ class Graph {
     // Walk Cycle
     // Prune
     this.minSpanTree();
-    let mst_weight = this.weight;
     this.perfectMatching();
     this.walkCycle();
     this.prune();
@@ -752,7 +762,7 @@ class Graph {
       if (!success) break;
     }
     let finished_weight = this.weight;
-    console.log("MST  :", mst_weight);
+    console.log("MST  :", this.mst_weight);
     console.log("PRUNE:", prune_weight);
     console.log("DONE :", finished_weight);
     console.log("RATIO:", finished_weight / mst_weight);
@@ -796,6 +806,9 @@ class Graph {
                 return x.a.index;
               });
               console.log(this.prune_nodes);
+              console.log("MST  :", this.mst_weight);
+              console.log("DONE :", this.weight);
+              console.log("RATIO:", this.weight / this.mst_weight);
               this.currentState = "done";
               return;
             }

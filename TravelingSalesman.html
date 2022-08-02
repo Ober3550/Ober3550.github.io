@@ -67,6 +67,12 @@
           solving.update();
         }
       }
+      function refresh(){
+        background(BACKGROUND_COLOR);
+        stroke(PALLETTE.blue);
+        drawEdges(solving.edges);
+        drawNodes(solving.nodes);
+      }
     </script>
   </head>
   <body style="background-color: #646464">
