@@ -28,6 +28,7 @@ class Graph {
     this.mst_visited = [0];
     this.mst_unvisited = [...Array(this.nodes.length).keys()].slice(1);
     this.mst_iter = 0;
+    this.mst_edges = [];
     this.pm_odds;
     this.pm_distances;
     this.pm_attempts = 0;
@@ -118,10 +119,12 @@ class Graph {
     if (PART_UPDATE) {
       if (this.mst_unvisited.length == 0) {
         this.mst_weight = this.weight;
+        this.mst_edges = this.edges.slice();
         this.currentState = "pm";
       }
     } else {
       this.mst_weight = this.weight;
+      this.mst_edges = this.edges.slice();
       let end = new Date();
       if (LOG_MST || LOG_TIMING) {
         //           MST   in   :
@@ -597,10 +600,10 @@ class Graph {
     // x = (c2-c1)/(m1-m2)
     let intersectX = (edgeB.c - edgeA.c) / (edgeA.m - edgeB.m);
     let intersectY;
-    if ((""+edgeA.m).includes("Infinity")) {
+    if (("" + edgeA.m).includes("Infinity")) {
       intersectX = edgeA.a.x;
       intersectY = edgeB.m * intersectX + edgeB.c;
-    } else if ((""+edgeB.m).includes("Infinity")) {
+    } else if (("" + edgeB.m).includes("Infinity")) {
       intersectX = edgeB.a.x;
       intersectY = edgeA.m * intersectX + edgeA.c;
     } else {
@@ -802,9 +805,24 @@ class Graph {
             drawEdges(this.edges);
             drawNodes(this.nodes);
             if (this.cross_any == false) {
+              stroke(PALLETTE.green);
+              for (let i = 0; i < this.mst_edges.length; i++) {
+                for (let j = 0; j < this.edges.length; j++) {
+                  if (
+                    (this.mst_edges[i].a.index == this.edges[j].a.index &&
+                      this.mst_edges[i].b.index == this.edges[j].b.index) ||
+                    (this.mst_edges[i].b.index == this.edges[j].a.index &&
+                      this.mst_edges[i].a.index == this.edges[j].b.index)
+                  ) {
+                    this.edges[j].draw();
+                  }
+                }
+              }
               this.prune_nodes = this.edges.map((x) => {
                 return x.a.index;
               });
+              stroke(PALLETTE.blue);
+              drawNodes(this.nodes);
               console.log(this.prune_nodes);
               console.log("MST  :", this.mst_weight);
               console.log("DONE :", this.weight);
