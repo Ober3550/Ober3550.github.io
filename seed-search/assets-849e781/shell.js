@@ -38,7 +38,12 @@
     return u;
   }
 
+  // Nauvis's radius under Space Exploration with the default map settings:
+  // 10000 / 6 * (6 + log2(1 / planet-size frequency / 6)), frequency 1.
+  var SE_NAUVIS_RADIUS = 10000 / 6 * (6 - Math.log2(6));
+
   window.Shell = {
+    seNauvisRadius: SE_NAUVIS_RADIUS,
     base: base,
     pages: pages,
     mod: mod,

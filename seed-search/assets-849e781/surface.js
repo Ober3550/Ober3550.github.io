@@ -525,7 +525,9 @@
   }
 
   function nauvisZone() {
-    return { n: "Nauvis", t: "planet", s: SEED, r: 5000, water: "none", enemy: "none", c: 1, nauvis: true };
+    // (under Space Exploration Nauvis is a planet of SE's default radius)
+    var se = MOD === "se" || MOD === "k2se";
+    return { n: "Nauvis", t: "planet", s: SEED, r: se ? window.Shell.seNauvisRadius : 5000, water: "med", enemy: "high", c: 1, nauvis: true };
   }
 
   // The zone's line of the card, as the seed page's table shows it: radius,
@@ -547,7 +549,9 @@
     // zone / base Nauvis: preview radius IS the disk radius (planets render an
     // R-disk even though the real map is "infinite"). Allow up to 10000 — the
     // max radius of an SE zone/planet.
-    return { min: 10, max: 10000, step: 50, value: 2000 };
+    // Nauvis under Space Exploration opens whole, at SE's default radius.
+    var seNauvis = kind === "nauvis" && (MOD === "se" || MOD === "k2se");
+    return { min: 10, max: 10000, step: 50, value: seNauvis ? Math.round(window.Shell.seNauvisRadius) : 2000 };
   }
 
   function adaptForKind() {

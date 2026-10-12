@@ -7,7 +7,7 @@
 (function () {
   var estimator = null;   // { estimateZoneOre }
   var MODS = { base: "Base", sa: "Space Age", se: "Space Exploration", k2se: "SE + K2" };
-  var state = { mod: MODS[window.Shell.mod] ? window.Shell.mod : "k2se", k2: true, zones: [], sortKey: "dv", sortDir: "asc", q: "", calidus: true, onlyHl: true, hlCombined: true, hlPrimary: false };
+  var state = { mod: MODS[window.Shell.mod] ? window.Shell.mod : "k2se", k2: true, zones: [], sortKey: "dv", sortDir: "asc", q: "", calidus: true, onlyHl: true, hlCombined: true, hlPrimary: false, hlEnemyMax: "", hlWet: true };
   state.k2 = state.mod === "k2se";
 
   function loadEstimator() {
@@ -44,8 +44,23 @@
     { res: "se-iridium-ore", color: "#e6b422" },
     { res: "se-beryllium-ore", color: "#39d3d3" }
   ];
+  // Enemy levels, mildest first. The "exclude enemies" setting names the
+  // first level that is too much: a zone at that level or above is passed
+  // over by the highlighting, and the next suitable zone is marked instead.
+  var ENEMY_LEVELS = ["none", "very_low", "low", "med", "high", "very_high", "max"];
+  // (an asteroid field has no enemies and no water to speak of: neither
+  // exclusion applies to it)
+  function enemyOk(z) {
+    var cut = ENEMY_LEVELS.indexOf(state.hlEnemyMax);
+    return cut < 0 || z.t === "asteroid-field" || ENEMY_LEVELS.indexOf(z.enemy || "none") < cut;
+  }
+  // "Exclude zones with no water": a waterless zone is never highlighted,
+  // not even as the last resort for a resource no watered zone has.
+  function waterOk(z) {
+    return !state.hlWet || z.t === "asteroid-field" || (!!z.water && z.water !== "none");
+  }
   function settleable(z) {
-    return (z.t === "planet" || z.t === "moon") && !!z.rs && !!z.water && z.water !== "none" && z.r > COMBO_RADIUS;
+    return (z.t === "planet" || z.t === "moon") && !!z.rs && !!z.water && z.water !== "none" && z.r > COMBO_RADIUS && enemyOk(z);
   }
   function combosOf(z) {
     if (!settleable(z)) return [];
@@ -63,7 +78,7 @@
   // for each of its `standIns`, the nearest surface whose primary is that
   // resource, in the resource's colour.
   function systemMarks(zones) {
-    var bodies = zones.filter(function (z) { return z.c === 1 && (z.t === "planet" || z.t === "moon"); });
+    var bodies = zones.filter(function (z) { return z.c === 1 && (z.t === "planet" || z.t === "moon") && enemyOk(z) && waterOk(z); });
     var home = bodies.filter(function (z) { return z.water && z.water !== "none"; });
     var settle = home.filter(settleable);
     var out = [];
@@ -123,7 +138,7 @@
     // "Combined resources": the surfaces holding a combination, and the
     // nearest surfaces that stand in where a seed has none
     if (state.hlCombined) out = combosOf(z).concat(marks.system.filter(function (m) { return m[0] === z; }).map(function (m) { return m[1]; }));
-    if (state.hlPrimary && CORE_PRIMARY[z.p]) out.push({ label: nm(z.p) + "-primary", colors: [CORE_PRIMARY[z.p], CORE_PRIMARY[z.p]] });
+    if (state.hlPrimary && CORE_PRIMARY[z.p] && enemyOk(z) && waterOk(z)) out.push({ label: nm(z.p) + "-primary", colors: [CORE_PRIMARY[z.p], CORE_PRIMARY[z.p]] });
     return out;
   }
 
@@ -208,9 +223,10 @@
     // Open at the zone's ACTUAL radius (disk-cropped to it). Asteroid fields
     // carry no radius in the universe data — open them at 5000 (SE's default
     // field radius). Max SE zone radius is 10000, which is also the page
-    // slider max; ?r is clamped to that only. Nauvis carries no ?r: it opens
-    // at the surface page's default preview radius.
-    var r0 = z.nauvis ? null : z.r ? Math.round(z.r) : (z.t === "asteroid-field" ? 5000 : null);
+    // slider max; ?r is clamped to that only. Base-game Nauvis has no edge
+    // and carries no ?r: it opens at the surface page's default preview
+    // radius. Under Space Exploration it is a planet like the others.
+    var r0 = z.nauvis && z.kind !== "se" ? null : z.r ? Math.round(z.r) : (z.t === "asteroid-field" ? 5000 : null);
     return window.Shell.surfaceHref(state.seed, z.n, state.mod, r0 ? Math.min(r0, 10000) : null);
   }
   // True when the row can open a surface (seed present + engine support).
@@ -296,6 +312,15 @@
           state.featuredProd[n] = true;
           return '<label class="hint" title="' + counts[n] + " seeds whose loot has " + n + ' productivity modules"><input type="checkbox" data-prod="' + n + '" checked> ' + n + "</label>";
         }).join(" ");
+        // and a floor on the planet count
+        var planetCounts = {};
+        cfg.seeds.forEach(function (f) { planetCounts[f.planets] = true; });
+        state.featuredMinPlanets = 0;
+        state.featuredLimit = FEATURED_PAGE;
+        var planetSel = document.getElementById("featured-planets");
+        if (planetSel) planetSel.innerHTML = '<option value="0">any</option>' + Object.keys(planetCounts).map(Number).sort(function (a, b) { return a - b; }).slice(1).map(function (n) {
+          return '<option value="' + n + '">&gt;= ' + n + "</option>";
+        }).join("");
         document.getElementById("featured-head").innerHTML = "<tr>" + FEATURED_COLS.map(function (c) {
           return "<th" + (c[0] ? ' class="sortable' + (c[3] ? " " + c[3] : "") + '" data-key="' + c[0] + '"' : "") + (c[2] ? ' title="' + esc(c[2]) + '"' : "") + ">" +
             c[1] + (c[0] ? ' <span class="sort-ind"></span>' : "") + "</th>";
@@ -353,6 +378,8 @@
       '<span class="' + (level ? "enemy-" + level : "") + '">' + e + "</span></div>";
   }
 
+  // rows drawn at a time: the list runs to a couple of thousand seeds
+  var FEATURED_PAGE = 200;
   function prodCount(f) { return String(f.loot || "").split("P").length - 1; }
 
   // The list arrives best first; a header click sorts by that column instead
@@ -360,7 +387,9 @@
   function renderFeatured() {
     var num = function (v) { return v == null ? "—" : Number(v).toLocaleString(); };
     var k = state.featuredKey, dir = state.featuredDir === "asc" ? 1 : -1;
-    var rows = state.featured.filter(function (f) { return !state.featuredProd || state.featuredProd[prodCount(f)] !== false; });
+    var rows = state.featured.filter(function (f) {
+      return (!state.featuredProd || state.featuredProd[prodCount(f)] !== false) && f.planets >= (state.featuredMinPlanets || 0);
+    });
     document.getElementById("featured-note").textContent = "· " + rows.length + " of " +
       Number(state.featuredSearched).toLocaleString() + " seeds searched (" + window.Shell.modLabel(state.mod) + ")";
     if (k) rows.sort(function (a, b) {
@@ -373,6 +402,8 @@
       if (k === "loot") return (va.length - vb.length) * dir || va.localeCompare(vb) || a.seed - b.seed;
       return (va - vb) * dir || a.seed - b.seed;
     });
+    var total = rows.length;
+    rows = rows.slice(0, state.featuredLimit || FEATURED_PAGE);
     document.getElementById("featured-body").innerHTML = rows.map(function (f) {
       return '<tr data-seed="' + f.seed + '" style="cursor:pointer" title="Open seed ' + f.seed + '">' +
         '<td><a style="color:var(--accent)" href="' + esc(pageHref(f.seed)) + '">' + f.seed + "</a></td>" +
@@ -380,7 +411,10 @@
         '<td><div class="slot-lines labels"><span>Resources</span><span>Zone</span><span>Radius</span><span>Δv</span><span>Enemy</span></div></td>' +
         SLOTS.map(function (slot) { return "<td>" + slotCell(f.seed, f[slot]) + "</td>"; }).join("") +
         "<td>" + num(f.naquiumDv) + "</td></tr>";
-    }).join("");
+    }).join("") + (total > rows.length ? '<tr class="featured-more"><td colspan="' + FEATURED_COLS.length + '">' +
+      '<button type="button" class="btn" data-more="' + FEATURED_PAGE + '">Show ' + Math.min(FEATURED_PAGE, total - rows.length) + " more</button> " +
+      '<button type="button" class="btn" data-more="all">Show all ' + total.toLocaleString() + "</button>" +
+      ' <span class="hint">showing ' + rows.length + " of " + total.toLocaleString() + "</span></td></tr>" : "");
     document.querySelectorAll("#featured-head .sort-ind").forEach(function (el) { el.textContent = ""; });
     var active = k && document.querySelector('#featured-head th[data-key="' + k + '"] .sort-ind');
     if (active) active.textContent = dir === 1 ? " ▲" : " ▼";
@@ -391,7 +425,7 @@
   // the same view.
   function pageHref(seed) {
     return window.Shell.seedHref(seed, state.mod) + (state.onlyHl ? "" : "&hl=0") +
-      (state.hlCombined ? "" : "&cmb=0") + (state.hlPrimary ? "&pri=1" : "");
+      (state.hlCombined ? "" : "&cmb=0") + (state.hlPrimary ? "&pri=1" : "") + (state.hlEnemyMax ? "&en=" + state.hlEnemyMax : "") + (state.hlWet ? "" : "&wet=0");
   }
   function syncUrl() {
     history.replaceState(null, "", pageHref(state.seed));
@@ -423,7 +457,10 @@
         // Synthetic Nauvis (the universe generator never emits it): default-FSR
         // planet, r5000. Estimated client-side (base ores + K2 rare-metal);
         // surface generation uses the game's default map-gen settings (nauvis).
-        zones.unshift({ n: "Nauvis", t: "planet", s: seedVal, r: 5000, water: "none", enemy: "none", c: 1, dv: 0, nauvis: true, kind: "se" });
+        // Its water and enemies are the map's own settings; with the defaults
+        // (every control 1 / 1 / 1) those are what SE's tags call water "med"
+        // and enemy "high".
+        zones.unshift({ n: "Nauvis", t: "planet", s: seedVal, r: window.Shell.seNauvisRadius, water: "med", enemy: "high", c: 1, dv: 0, nauvis: true, kind: "se" });
         zones.forEach(function (z) { z.kind = "se"; });
         // Without Krastorio 2 its resources do not exist: the generator still
         // rolls a share for them (the roll keeps the others' in step), which
@@ -456,7 +493,7 @@
       });
     }
     // what is highlighted: both kept in the address, like "Only highlighted"
-    [["hl-combined", "hlCombined", "cmb", true], ["hl-primary", "hlPrimary", "pri", false]].forEach(function (spec) {
+    [["hl-combined", "hlCombined", "cmb", true], ["hl-primary", "hlPrimary", "pri", false], ["hl-wet", "hlWet", "wet", true]].forEach(function (spec) {
       var el = document.getElementById(spec[0]);
       if (!el) return;
       var v = new URLSearchParams(location.search).get(spec[2]);
@@ -469,6 +506,21 @@
         if (state.featured) renderFeatured();
       });
     });
+    var enEl = document.getElementById("hl-enemy");
+    if (enEl) {
+      var en = new URLSearchParams(location.search).get("en");
+      state.hlEnemyMax = ENEMY_LEVELS.indexOf(en) > 0 ? en : "";
+      enEl.innerHTML = '<option value="">none</option>' + ENEMY_LEVELS.slice(1).map(function (l, i) {
+        return '<option value="' + l + '">' + (i === ENEMY_LEVELS.length - 2 ? "= " : "&gt;= ") + ce(l) + "</option>";
+      }).join("");
+      enEl.value = state.hlEnemyMax;
+      enEl.addEventListener("change", function (e) {
+        state.hlEnemyMax = e.target.value;
+        syncUrl();
+        renderTable();
+        if (state.featured) renderFeatured();
+      });
+    }
     document.getElementById("zt-head").addEventListener("click", function (e) {
       var thEl = e.target.closest("th[data-key]"); if (!thEl) return;
       var k = thEl.dataset.key;
@@ -517,8 +569,20 @@
       state.featuredProd[cb.dataset.prod] = cb.checked;
       renderFeatured();
     });
+    var featuredPlanets = document.getElementById("featured-planets");
+    if (featuredPlanets) featuredPlanets.addEventListener("change", function (e) {
+      state.featuredMinPlanets = +e.target.value;
+      state.featuredLimit = FEATURED_PAGE;
+      renderFeatured();
+    });
     var featuredBody = document.getElementById("featured-body");
     if (featuredBody) featuredBody.addEventListener("click", function (e) {
+      var more = e.target.closest("button[data-more]");
+      if (more) {
+        state.featuredLimit = more.dataset.more === "all" ? Infinity : (state.featuredLimit || FEATURED_PAGE) + FEATURED_PAGE;
+        renderFeatured();
+        return;
+      }
       if (e.target.closest("a")) return; // the link navigates by itself
       var row = e.target.closest("tr[data-seed]");
       if (!row) return;
