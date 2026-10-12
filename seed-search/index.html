@@ -3,23 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seed — Surface Explorer</title>
-  <link rel="stylesheet" href="assets-b846816/style.css">
+  <title>Factorio Seed Viewer</title>
+  <link rel="stylesheet" href="assets-65784b0/style.css">
 </head>
 <body>
   <div class="app no-sidebar">
     <main id="main">
       <div class="page">
-        <div class="crumbs"><span id="seed-crumb">Seed (client-side)</span></div>
-        <h2>🌍 Seed <span class="badge zone-type" title="generated entirely in your browser — no backend">client-side</span></h2>
-        <div class="filter-bar">
-          <label>Mod config: <select id="mod-select"></select></label>
-          <label>Seed: <input type="number" id="seed-input" min="0" step="1" placeholder="e.g. 32094082" style="width:12em"></label>
-          <button type="button" class="btn" id="gen-btn">Generate</button>
-          <span id="gen-status" class="hint"></span><br/>
-          <label>Zone: <input type="text" id="zt-search" placeholder="Name / Resource" autocomplete="off"></label>
-          <label class="hint" title="The Calidus home system plus every asteroid field (fields orbit other stars, incl. the naquium-primary one) — the default SE view"><input type="checkbox" id="cal-filter" checked> Calidus + asteroid fields</label>
-          <label class="hint" title="Only the rows with a colour wash: Nauvis, surfaces holding a resource combination, and the nearest naquium-primary asteroid field"><input type="checkbox" id="hl-filter"> Only highlighted</label>
+        <h2 class="page-title"><img src="assets-65784b0/factorio-gear.webp" alt="" width="32" height="32"> Factorio Seed Viewer</h2>
+        <div class="filter-bar seed-controls">
+          <div><label>Mod config: <select id="mod-select"></select></label></div>
+          <div><label>Seed: <input type="number" id="seed-input" min="0" step="1" placeholder="e.g. 32094082" style="width:12em"></label>
+            <button type="button" class="btn" id="gen-btn">Generate</button>
+            <span id="gen-status" class="hint"></span></div>
+          <div><label>Search: <input type="text" id="zt-search" placeholder="Zone / Resource" autocomplete="off"></label></div>
+          <div><label class="hint" title="The Calidus home system plus every asteroid field (fields orbit other stars, incl. the naquium-primary one) — the default SE view"><input type="checkbox" id="cal-filter" checked> Calidus + asteroid fields</label></div>
+          <div><label class="hint" title="Only the rows with a colour wash: Nauvis, surfaces holding a resource combination, and the nearest naquium-primary asteroid field"><input type="checkbox" id="hl-filter"> Only highlighted</label></div>
         </div>
         <details id="featured" hidden style="margin:0.5em 0 1em">
           <summary style="cursor:pointer"><strong>Top seeds</strong> <span id="featured-note" class="hint"></span></summary>
@@ -57,10 +56,10 @@
       </div>
     </main>
   </div>
-  <script src="assets-b846816/shell.js"></script>
-  <script src="assets-b846816/gen-bridge.js"></script>
-  <script src="assets-b846816/universe-wasm.js"></script>
-  <script src="assets-b846816/estimate-core.js"></script>
-  <script src="assets-b846816/analyze.js"></script>
+  <script src="assets-65784b0/shell.js"></script>
+  <script src="assets-65784b0/gen-bridge.js"></script>
+  <script src="assets-65784b0/universe-wasm.js"></script>
+  <script src="assets-65784b0/estimate-core.js"></script>
+  <script src="assets-65784b0/analyze.js"></script>
 </body>
 </html>

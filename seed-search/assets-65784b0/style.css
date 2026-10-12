@@ -42,6 +42,11 @@ body {
   padding-left: 220px;
 }
 
+.page-title { display: flex; align-items: center; gap: 8px; }
+
+/* seed page controls: one setting per line */
+.seed-controls > div + div { margin-top: 8px; }
+
 /* the static pages (index.html, surface.html) have no sidebar */
 .app.no-sidebar { padding-left: 0; }
 
@@ -664,4 +669,29 @@ a.btn-sm {
   width: 0%;
   background: var(--accent, #58a6ff);
   transition: width 0.15s ease-out;
+}
+
+/* ── Seed page on a narrow screen ────────────────────────────────────────
+   A row of eight columns cannot fit a phone, so each zone becomes a card:
+   name and type, then radius / Δv / water / enemy / primary on one wrapping
+   line, then its resources across the full width. The header shrinks to the
+   sortable columns. */
+@media (max-width: 720px) {
+  main { padding: 12px; min-width: 0; }
+  #zone-table, #zone-table thead, #zone-table tbody { display: block; }
+  #zone-table thead tr { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  #zone-table th { display: none; padding: 0; border: 0; background: none; }
+  #zone-table th.sortable { display: block; }
+  #zone-table thead tr::before { content: "Sort:"; color: var(--muted); font-size: 0.85rem; }
+  #zone-table tbody tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 10px; border-bottom: 1px solid rgba(48,54,61,0.5); }
+  #zone-table td { padding: 0; border: 0; text-align: left; }
+  #zone-table td::before { color: var(--muted); }
+  #zone-table td:nth-child(3)::before { content: "r "; }
+  #zone-table td:nth-child(4)::before { content: "Δv "; }
+  #zone-table td:nth-child(5)::before { content: "water "; }
+  #zone-table td:nth-child(6)::before { content: "enemy "; }
+  #zone-table td.yields-cell { flex-basis: 100%; max-width: none; }
+  #zone-table td[colspan] { flex-basis: 100%; }
+  /* the top seeds table keeps its columns and scrolls sideways */
+  #featured table { min-width: 760px; }
 }

@@ -25,11 +25,16 @@
   // combo is the one the Top seeds list is picked for.
   var COMBO_MIN = 0.05, COMBO_RADIUS = 800;
   var COMBOS = [
-    { res: ["se-vulcanite", "se-holmium-ore", "se-cryonite"], colors: ["#f85149", "#ff8fd8", "#58a6ff"] },
-    { res: ["se-vitamelange", "stone"], colors: ["#3fb950", "#c2ad7a"], key: "se-vitamelange", keyColor: "#3fb950" }
+    { res: ["se-vulcanite", "se-holmium-ore", "se-cryonite"], colors: ["#f85149", "#ff8fd8", "#58a6ff"],
+      // without it, each of the three from its own nearest watered surface
+      standIns: [{ res: "se-vulcanite", color: "#f85149" }, { res: "se-holmium-ore", color: "#ff8fd8" }, { res: "se-cryonite", color: "#58a6ff" }] },
+    { res: ["se-vitamelange", "stone"], colors: ["#3fb950", "#c2ad7a"],
+      // the resource the pair is wanted for; its stand-in is a settleable surface
+      standIns: [{ res: "se-vitamelange", color: "#3fb950", settleable: true }] }
   ];
   // Resources wanted on a surface of their own: the nearest home-system planet
-  // or moon with water whose primary is the resource is marked in its colour.
+  // or moon with water whose primary is the resource is marked in its colour
+  // (a waterless one only when no surface with water has it).
   var NEAREST_PRIMARY = [
     { res: "se-iridium-ore", color: "#e6b422" },
     { res: "se-beryllium-ore", color: "#39d3d3" }
@@ -47,24 +52,28 @@
     return best;
   }
   // Marks that depend on the whole home system -> [[zone, highlight], ...]:
-  // the nearest primaries above, and a stand-in for a combo no surface has -
-  // the nearest surface whose primary is the combo's `key` (the resource it
-  // is wanted for), in that resource's colour.
+  // the nearest primaries above, and the stand-ins for a combo no surface has -
+  // for each of its `standIns`, the nearest surface whose primary is that
+  // resource, in the resource's colour.
   function systemMarks(zones) {
-    var home = zones.filter(function (z) { return z.c === 1 && (z.t === "planet" || z.t === "moon") && z.water && z.water !== "none"; });
-    var out = [];
-    NEAREST_PRIMARY.forEach(function (n) {
-      var z = nearestPrimary(home, n.res);
-      if (z) out.push([z, { label: "nearest " + nm(n.res) + "-primary surface with water", colors: [n.color, n.color] }]);
-    });
+    var bodies = zones.filter(function (z) { return z.c === 1 && (z.t === "planet" || z.t === "moon"); });
+    var home = bodies.filter(function (z) { return z.water && z.water !== "none"; });
     var settle = home.filter(settleable);
-    COMBOS.forEach(function (c) {
-      if (!c.key || settle.some(function (z) { return combosOf(z).indexOf(c) !== -1; })) return;
-      var z = nearestPrimary(settle, c.key);
+    var out = [];
+    // nearest surface whose primary is `res`: one with water (from `pool`),
+    // or as a last resort a waterless one
+    function mark(res, color, pool, why) {
+      var z = nearestPrimary(pool, res), dry = false;
+      if (!z) { z = nearestPrimary(bodies, res); dry = true; }
       if (z) out.push([z, {
-        label: "nearest " + nm(c.key) + " surface (this seed has none with " + c.res.map(nm).join(" + ") + ")",
-        colors: [c.keyColor, c.keyColor]
+        label: "nearest " + nm(res) + "-primary surface" + (dry ? " (none of them has water)" : " with water") + (why ? " — this seed has none with " + why : ""),
+        colors: [color, color]
       }]);
+    }
+    NEAREST_PRIMARY.forEach(function (n) { mark(n.res, n.color, home, ""); });
+    COMBOS.forEach(function (c) {
+      if (settle.some(function (z) { return combosOf(z).indexOf(c) !== -1; })) return;
+      c.standIns.forEach(function (n) { mark(n.res, n.color, n.settleable ? settle : home, c.res.map(nm).join(" + ")); });
     });
     return out;
   }
@@ -314,7 +323,7 @@
         zones.unshift({ n: "Nauvis", t: "planet", s: seedVal, r: 5000, water: "none", enemy: "none", c: 1, dv: 0, nauvis: true, kind: "se" });
         zones.forEach(function (z) { z.kind = "se"; });
         state.zones = zones;
-        status.textContent = uni.z.length + " zones · generated client-side";
+        status.textContent = "";
         renderTable();
       })
       .catch(function (e) { if (status) status.textContent = "error: " + e.message; console.error(e); });
@@ -390,8 +399,6 @@
     }
     window.preloadUniverseWasm && window.preloadUniverseWasm();
     applyMod();
-    var crumb = document.getElementById("seed-crumb");
-    if (crumb) crumb.textContent = "Seed (client-side · " + window.Shell.modLabel(state.mod) + ")";
     // Auto-generate / list if a seed was in the URL (?seed=...).
     var pre = window.Shell.seed;
     if (pre != null) state.seed = pre;
