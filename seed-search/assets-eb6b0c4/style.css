@@ -47,6 +47,28 @@ body {
 /* seed page controls: one setting per line */
 .seed-controls > div + div { margin-top: 8px; }
 
+/* surface page header: the seed, linking back to its zones */
+.seed-link a { color: var(--accent); text-decoration: none; }
+.seed-link a::before { content: "←"; display: inline-block; margin-right: 8px; }
+.seed-link a:hover { text-decoration: underline; }
+
+/* surface page: the zone's card, laid out like a zone row of the seed page */
+.zone-card { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; font-size: 0.95rem; }
+.zone-card > strong { font-size: 1.15rem; }
+.zone-card #sf-meta { display: contents; }
+.zone-card .k { color: var(--muted); }
+
+/* the terrain brightness slider takes a line of its own in the card */
+.zone-card .dim-row { flex-basis: 100%; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.9rem; }
+.zone-card .dim-row[hidden] { display: none; }
+.zone-card .dim-row #sf-dim-val { color: var(--text); min-width: 3em; }
+/* (no padding or border: the text-box styling of `input` above would leave
+   the track wider than the knob can travel) */
+.zone-card .dim-row input { flex: 1; max-width: 16em; padding: 0; border: 0; background: none; }
+.res-info { display: block; margin-top: 6px; }
+.surf-status:empty { display: none; }
+.surf-status { margin-bottom: 8px; }
+
 /* the static pages (index.html, surface.html) have no sidebar */
 .app.no-sidebar { padding-left: 0; }
 
@@ -690,6 +712,7 @@ a.btn-sm {
   #zone-table td:nth-child(4)::before { content: "Δv "; }
   #zone-table td:nth-child(5)::before { content: "water "; }
   #zone-table td:nth-child(6)::before { content: "enemy "; }
+  #zone-table td:nth-child(7)::before { content: "primary "; }
   #zone-table td.yields-cell { flex-basis: 100%; max-width: none; }
   #zone-table td[colspan] { flex-basis: 100%; }
   /* the top seeds table keeps its columns and scrolls sideways */

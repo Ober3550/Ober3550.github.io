@@ -105,15 +105,24 @@
   var els = {
     badge: document.getElementById("sf-badge"),
     meta: document.getElementById("sf-meta"),
-    radius: document.getElementById("sf-radius"),
-    layerWrap: document.getElementById("sf-layer-wrap"),
-    layer: document.getElementById("sf-layer"),
+    // The surface is drawn once, at the radius in the address (?r=, which the
+    // seed page sets to the zone's radius): there is no radius box and no
+    // Generate button, so these two only hold state.
+    radius: { value: "2000" },
+    // The page always draws terrain + ore (0). There is no selector for it;
+    // ?layer=1 (terrain only) / ?layer=2 (ore only) remain for testing.
+    layer: { value: "0" },
     dimWrap: document.getElementById("sf-dim-wrap"),
     dim: document.getElementById("sf-dim"),
-    go: document.getElementById("sf-go"),
+    go: { disabled: false },
+    dimVal: document.getElementById("sf-dim-val"),
     status: document.getElementById("sf-status"),
     canvas: document.getElementById("sf-canvas"),
-    res: document.getElementById("sf-res"),
+    // The result line is written as "<resource chips> <hint>· size · timing…";
+    // the hint goes on a line of its own under the chips (no leading dot).
+    res: (function (el) {
+      return { set innerHTML(html) { el.innerHTML = html.replace('<span class="hint">· ', '<span class="hint res-info">'); } };
+    })(document.getElementById("sf-res")),
     progress: document.getElementById("sf-progress")
   };
   var busy = false;
@@ -137,7 +146,7 @@
     var keys = Object.keys(totals).sort(function (a, b) { return totals[b].amount - totals[a].amount; });
     if (!keys.length) return "";
     return keys.map(function (r) {
-      return '<span class="res-chip surf" title="exact — generated in your browser">' + nm(r) + " <strong>" + totals[r].display + "</strong></span>";
+      return '<span class="res-chip ore ore-' + nm(r) + '" title="exact — generated in your browser">' + nm(r) + " <strong>" + totals[r].display + "</strong></span>";
     }).join(" ");
   }
 
@@ -280,10 +289,8 @@
     var ctx = els.canvas.getContext("2d");
     els.canvas.width = npx;
     els.canvas.height = npx;
-    // layered: terrain draws go to the offscreen terrain layer, ore to the
-    // ore layer, and the visible canvas is composited from both
-    var L = layersBegin(npx, null);
-    if (L) ctx = L.terrain.getContext("2d");
+    // terrain goes on the page's canvas, ore on a canvas laid over it
+    oreOverlayClear();
     var diskR = zoneDiskRadius(zoneObj, R); // clip radius for the wasm + cell plan
     var plan = planSurfaceCells(R, diskR);
     var cells = plan.cells;
@@ -292,18 +299,11 @@
 
     var totals = {};
     return new Promise(function (resolve, reject) {
-      // Ore has a canvas of its own (the ore layer when layered), drawn onto
-      // the visible canvas over whatever terrain is there.
-      var oreCv = layer === 1 ? null : L ? L.ore : newCanvas(npx);
-      var visible = els.canvas.getContext("2d");
-      function showOre(x, y, w, h) {
-        if (L) { compositeSA(x, y, w, h); return; }
-        if (oreCv) visible.drawImage(oreCv, x, y, w, h, x, y, w, h);
-      }
+      var oreCv = layer === 1 ? null : oreOverlay(npx);
       var done = 0;
       var failed = 0;
 
-      var ore = !oreCv ? Promise.resolve(null) : streamOre(zoneObj, R, diskR, palette, oreCv, showOre, function (n, total) {
+      var ore = !oreCv ? Promise.resolve(null) : streamOre(zoneObj, R, diskR, palette, oreCv, function (n, total) {
         // the terrain's progress is shown until it is done, then the ore's
         if (layer === 2 || done === cells.length) {
           status("placing ore " + n + "/" + total + " cells…");
@@ -323,8 +323,6 @@
           var img = ctx.createImageData(r.summary.width, r.summary.height);
           img.data.set(r.pixels);
           ctx.putImageData(img, cell.x0 + R, cell.y0 + R);
-          // layered: draw both layers; otherwise put back the ore this cell covered
-          showOre(cell.x0 + R, cell.y0 + R, cell.x1 - cell.x0, cell.y1 - cell.y0);
           done++;
           if (onCell) onCell(done, cells.length);
         }).catch(function (e) {
@@ -380,11 +378,10 @@
   // over the worker pool nearest-to-spawn first and drawn onto `oreCv`
   // (transparent where there is no ore) as each cell lands. `oreCv` is 2R px a
   // side, or smaller when the surface is shown downscaled (a phone's canvas
-  // limit): cells are then drawn scaled down to it. `show(x, y, w, h)` is
-  // called for every canvas rect that changed and `onProgress(done, total)`
-  // after each cell. Resolves to { name: { amount, display } }.
+  // limit): cells are then drawn scaled down to it. `onProgress(done, total)`
+  // is called after each cell. Resolves to { name: { amount, display } }.
   var ORE_CELL = 256;
-  function streamOre(z, R, diskR, palette, oreCv, show, onProgress) {
+  function streamOre(z, R, diskR, palette, oreCv, onProgress) {
     var octx = oreCv.getContext("2d");
     var scale = (2 * R) / oreCv.width; // tiles per canvas pixel
     octx.imageSmoothingEnabled = true;
@@ -422,12 +419,6 @@
         }
       }
     }
-    // a changed rect in tiles from the square's corner -> canvas pixels
-    function clampShow(x, y, w, h) {
-      if (scale !== 1) { w = Math.ceil((x + w) / scale) + 2; h = Math.ceil((y + h) / scale) + 2; x = Math.floor(x / scale) - 2; y = Math.floor(y / scale) - 2; w -= x; h -= y; }
-      var x0 = Math.max(0, x), y0 = Math.max(0, y), x1 = Math.min(oreCv.width, x + w), y1 = Math.min(oreCv.height, y + h);
-      if (x1 > x0 && y1 > y0) show(x0, y0, x1 - x0, y1 - y0);
-    }
     var jobs = cells.map(function (c) {
       return sendToPool({
         seed: SEED, k2: K2, zone: z, layer: 0, radius: diskR, terrainless: true,
@@ -456,7 +447,6 @@
         cx.putImageData(img, 0, 0);
         octx.drawImage(cellCv, 0, 0, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
         for (var k = 0; k < mine.length; k += 3) { drawWell(mine[k], mine[k + 1], mine[k + 2]); wells.push(mine[k], mine[k + 1], mine[k + 2]); }
-        clampShow(c.x0 + R - 1, c.y0 + R - 1, w + 2, h + 2);
         var res = r.summary.resources || {};
         Object.keys(res).forEach(function (rn) {
           if (!totals[rn]) totals[rn] = { amount: 0 };
@@ -469,7 +459,6 @@
     return Promise.all(jobs).then(function () {
       // wells go over ore, whichever cell landed first
       for (var k = 0; k < wells.length; k += 3) drawWell(wells[k], wells[k + 1], wells[k + 2]);
-      if (wells.length) clampShow(0, 0, 2 * R, 2 * R);
       Object.keys(totals).forEach(function (rn) {
         var v = totals[rn].amount;
         totals[rn].display = v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(2) + "M" : String(v);
@@ -492,14 +481,18 @@
     return { n: "Nauvis", t: "planet", s: SEED, r: 5000, water: "none", enemy: "none", c: 1, nauvis: true };
   }
 
+  // The zone's line of the card, as the seed page's table shows it: radius,
+  // Δv from Nauvis, water, enemies and the primary resource in its colour.
   function zoneMeta(z) {
+    var item = function (k, v) { return '<span><span class="k">' + k + "</span> " + v + "</span>"; };
+    var dv = z.dv == null || isNaN(z.dv) ? null : z.dv >= 1e6 ? (z.dv / 1e6).toFixed(2) + "M" : z.dv >= 1000 ? (z.dv / 1000).toFixed(1) + "k" : String(z.dv);
     var bits = [];
-    if (z.t) bits.push('<span class="badge zone-type">' + esc(z.t) + "</span>");
-    if (z.r) bits.push("radius " + Math.round(z.r));
-    if (z.water) bits.push("water " + esc(z.water));
-    if (z.enemy) bits.push("enemy " + esc(z.enemy));
-    if (z.p) bits.push("primary " + esc(z.p));
-    return bits.join(" · ");
+    if (z.r) bits.push(item("r", Math.round(z.r)));
+    if (dv != null) bits.push(item("Δv", '<span class="num">' + dv + "</span>"));
+    bits.push(item("water", esc(z.water || "none")));
+    bits.push(item("enemy", esc((z.enemy || "none").replace("very_", "v"))));
+    if (z.p) bits.push(item("primary", '<span class="ore ore-' + esc(nm(z.p)) + '">' + esc(nm(z.p)) + "</span>"));
+    return bits.join("");
   }
 
   function radiusLimits() {
@@ -511,8 +504,7 @@
   }
 
   function adaptForKind() {
-    els.badge.textContent = kind === "sa" ? "planet" : kind === "nauvis" ? "planet (base)" : "zone";
-    els.layerWrap.hidden = false;
+    els.badge.textContent = kind === "zone" ? "…" : "planet";
     if (els.dimWrap) els.dimWrap.hidden = false;
     var lim = radiusLimits();
     els.radius.min = lim.min; els.radius.max = lim.max; els.radius.step = lim.step; els.radius.value = lim.value;
@@ -523,10 +515,13 @@
     }
   }
 
-  // ── Space Age planet layers ───────────────────────────────────────────────
-  var sa = null;   // { R, terrain, ore, done } - offscreen layers of the last render
-  var SA_LAYER_MAX = 5000; // px per side of each layer canvas
-  var LAYERED_MAX = 6000;  // zones/Nauvis: keep layers up to this canvas size
+  // ── Terrain and ore as two canvases ───────────────────────────────────────
+  // The page's canvas holds the terrain and a second canvas, laid over it in
+  // the page, holds the ore (transparent elsewhere). Nothing is composited, so
+  // only those two images are kept in memory, and the "Terrain Brightness"
+  // slider darkens the terrain with a CSS filter instead of a redraw.
+  var sa = null;   // { R, done } - the Space Age render in progress / on screen
+  var SA_LAYER_MAX = 5000; // Space Age planets: px per side of each canvas
 
   function fmtAmount(v) {
     if (v >= 1e9) return (v / 1e9).toFixed(1) + "B";
@@ -535,45 +530,32 @@
     return String(v);
   }
 
-  // Start a layered render for a canvas of `px` x `px`: terrain and ore are
-  // kept on separate offscreen canvases so the "Terrain" slider can darken the
-  // terrain under the ore without regenerating. Returns null (plain drawing,
-  // slider inactive) when the canvases would be too large to keep three of.
-  function layersBegin(px, key) {
-    if (px > LAYERED_MAX) { sa = null; return null; }
-    var mk = function () { var c = document.createElement("canvas"); c.width = px; c.height = px; return c; };
-    sa = { R: key, terrain: mk(), ore: mk(), done: false };
-    return sa;
+  var oreOverlayEl = null;
+  function oreOverlayClear() {
+    if (oreOverlayEl) { oreOverlayEl.remove(); oreOverlayEl = null; }
+    els.canvas.style.filter = "";
   }
-
-  // Draw the visible canvas from the two layers (optionally just one rect).
-  // The "Terrain" slider darkens the terrain only where it has pixels, so a
-  // disk's transparent corners stay transparent.
-  function compositeSA(x, y, w, h) {
-    if (!sa) return;
-    var ctx = els.canvas.getContext("2d");
-    if (x == null) { x = 0; y = 0; w = els.canvas.width; h = els.canvas.height; }
-    var layer = parseInt(els.layer.value, 10) || 0;
+  // A fresh ore canvas of `px` x `px`, placed exactly over the terrain canvas.
+  function oreOverlay(px) {
+    oreOverlayClear();
+    var c = newCanvas(px);
+    var box = els.canvas.parentNode;
+    box.style.position = "relative";
+    // sized by the same rules as the canvas under it (#sf-canvas in style.css)
+    c.style.cssText = "position:absolute;pointer-events:none;width:100%;max-width:720px;height:auto;image-rendering:pixelated;" +
+      "left:" + els.canvas.offsetLeft + "px;top:" + els.canvas.offsetTop + "px";
+    box.appendChild(c);
+    oreOverlayEl = c;
+    applyDim();
+    return c;
+  }
+  // Terrain brightness from the slider. (Only under ore: a terrain-only view
+  // stays at full brightness.)
+  function applyDim() {
     var dim = els.dim ? parseInt(els.dim.value, 10) / 100 : 1;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, w, h);
-    ctx.clip();
-    ctx.clearRect(x, y, w, h);
-    if (layer !== 2) {
-      ctx.drawImage(sa.terrain, x, y, w, h, x, y, w, h);
-      if (layer === 0 && dim < 1) {
-        ctx.globalCompositeOperation = "source-atop";
-        ctx.globalAlpha = 1 - dim;
-        ctx.fillStyle = "#000";
-        ctx.fillRect(x, y, w, h);
-        ctx.globalCompositeOperation = "source-over";
-        ctx.globalAlpha = 1;
-      }
-    }
-    if (layer !== 1) ctx.drawImage(sa.ore, x, y, w, h, x, y, w, h);
-    ctx.restore();
+    els.canvas.style.filter = oreOverlayEl && dim < 1 ? "brightness(" + dim + ")" : "";
   }
+  var compositeSA = applyDim; // the slider's handler calls it by this older name
 
   function run() {
     if (busy) return;
@@ -590,8 +572,21 @@
     var gpu = gpuTerrainSupported();
     if ((kind === "zone" || kind === "nauvis") && !pool) spawnPool();
 
-    function doneUI() { busy = false; els.go.disabled = false; setProgress(1); }
-    function fail(e, tag) { busy = false; els.go.disabled = false; status(tag + ": " + e.message); console.error(e); }
+    // finished: the progress text goes; the card and the line under the map
+    // already say what was generated
+    // (the workers are released a tick later: the result line written right
+    // after this still reports how many there were)
+    function doneUI() { busy = false; els.go.disabled = false; setProgress(1); status(""); setTimeout(releasePool, 0); }
+    // There is no Generate button to press again, so a failure offers a
+    // reload: that restarts the workers and refetches the page's files (the
+    // usual cause is a file that could not be loaded).
+    function fail(e, tag) {
+      busy = false; els.go.disabled = false; status(tag + ": " + e.message + " "); console.error(e);
+      var retry = document.createElement("button");
+      retry.type = "button"; retry.className = "btn-sm"; retry.textContent = "Reload and retry";
+      retry.addEventListener("click", function () { location.reload(); });
+      els.status.appendChild(retry);
+    }
 
     // CPU wasm pipeline (default for ore-only layers & SA planets; also the
     // fallback whenever WebGPU terrain is unavailable or fails).
@@ -615,7 +610,6 @@
               '<span class="hint">· ' + width + "×" + width + " · " + layerName +
               (nres ? " · " + nres + " resources" : "") +
               " · generated client-side (" + pool.length + " workers) · " + window.__SURF_MS__ + " ms</span>";
-            status("zone " + z.n + " · " + z.t + " · r" + radius + (USE_GPU ? " (CPU wasm)" : ""));
           });
         })
         .catch(function (e) { fail(e, "error"); });
@@ -635,18 +629,12 @@
         var downscaled = scaleS > 1;
         els.canvas.width = disp;
         els.canvas.height = disp;
-        var GL = layersBegin(disp, null);
+        oreOverlayClear();
         // Ore runs on the CPU workers while the GPU does the terrain; on a
         // downscaled surface it is drawn scaled down like the terrain.
-        var visible = els.canvas.getContext("2d");
-        var oreCv = layer === 0 ? (GL ? GL.ore : newCanvas(disp)) : null;
+        var oreCv = layer === 0 ? oreOverlay(disp) : null;
         var terrainDone = false;
-        function showOre(x, y, w, h) {
-          if (!oreCv) return;
-          if (GL) { compositeSA(x, y, w, h); return; }
-          visible.drawImage(oreCv, x, y, w, h, x, y, w, h);
-        }
-        var oreP = !oreCv ? null : streamOre(z, R, diskR, palette, oreCv, showOre, function (n, total) {
+        var oreP = !oreCv ? null : streamOre(z, R, diskR, palette, oreCv, function (n, total) {
           if (!terrainDone) return; // the terrain's progress is shown first
           status("placing ore (CPU wasm) " + n + "/" + total + " cells…");
           setProgress(total ? n / total : 0);
@@ -667,7 +655,7 @@
         return window.generateSurfaceProgressive({
           seed: seed, zone: z, kind: gpuKind, radius: R, diskR: diskR, cell: 512,
           onCell: function (c) {
-            var ctx = (GL ? GL.terrain : els.canvas).getContext("2d");
+            var ctx = els.canvas.getContext("2d");
             if (scaleS === 1) {
               var img = ctx.createImageData(c.w, c.h);
               img.data.set(c.rgba);
@@ -682,8 +670,6 @@
               ctx.drawImage(cellCv, 0, 0, c.w, c.h,
                 c.x / scaleS, c.y / scaleS, c.w / scaleS, c.h / scaleS);
             }
-            if (GL) compositeSA(Math.floor(c.x / scaleS), Math.floor(c.y / scaleS), Math.ceil(c.w / scaleS) + 1, Math.ceil(c.h / scaleS) + 1);
-            else showOre(Math.floor(c.x / scaleS), Math.floor(c.y / scaleS), Math.ceil(c.w / scaleS) + 1, Math.ceil(c.h / scaleS) + 1); // put back the ore this cell covered
             status("gpu: " + label + " " + c.done + "/" + c.total + " cells…");
             setProgress(c.total ? c.done / c.total : 0);
           }
@@ -704,9 +690,7 @@
                 if (dx * dx + dy * dy > diskR * diskR) r.pixels[(py * W + px) * 4 + 3] = 0;
               }
             }
-            putImg((GL ? GL.terrain : els.canvas).getContext("2d"), W, r.summary.height, r.pixels, R - h, R - h);
-            if (GL) compositeSA(R - h, R - h, 2 * h, 2 * h);
-            else showOre(R - h, R - h, 2 * h, 2 * h);
+            putImg(els.canvas.getContext("2d"), W, r.summary.height, r.pixels, R - h, R - h);
             return cells;
           }, function (e) { console.error("lake patch failed:", e); return cells; });
         }).then(function (cells) {
@@ -730,20 +714,17 @@
       // Space Age planet: tiles + resources straight from the game's own
       // map-gen data (sa.wasm compiles the planet once per worker). Each cell
       // comes back as TWO layers - terrain and a transparent resource overlay
-      // - kept on separate offscreen canvases so the page can dim the terrain
-      // under the resources without regenerating.
+      // - drawn on the page's canvas and on the ore canvas over it.
       var p = PLANETS[planetKey];
       var R = radius;
-      if (sa && sa.R === R && sa.done) { compositeSA(); doneUI(); return; }
+      if (sa && sa.R === R && sa.done) { applyDim(); doneUI(); return; }
       if (!pool) spawnPool();
-      // three canvases (two layers + the visible one) are kept, so the layer
-      // size is capped; larger disks draw their cells downscaled
+      // the canvas size is capped; larger disks draw their cells downscaled
       var disp = Math.min(2 * R, SA_LAYER_MAX);
       var scale = (2 * R) / disp;
       els.canvas.width = disp;
       els.canvas.height = disp;
-      var mk = function () { var c = document.createElement("canvas"); c.width = disp; c.height = disp; return c; };
-      sa = { R: R, terrain: mk(), ore: mk(), done: false };
+      sa = { R: R, done: false };
       var blit = function (ctx, w, h, px, tx, ty) {
         if (scale === 1) { putImg(ctx, w, h, px, tx, ty); return; }
         var cx = cellCanvas(w, h);
@@ -754,8 +735,8 @@
         ctx.drawImage(cellCv, 0, 0, w, h, tx / scale, ty / scale, w / scale, h / scale);
       };
       var run_ = sa;
-      var tctx = sa.terrain.getContext("2d");
-      var octx = sa.ore.getContext("2d");
+      var tctx = els.canvas.getContext("2d");
+      var octx = oreOverlay(disp).getContext("2d");
       // cells on the 128-tile grid (whole chunks), clipped to [-R,R)
       var CELL = R > 1500 ? 256 : 128;
       var cells = [];
@@ -788,7 +769,6 @@
               ores[t.name].count += t.count;
               ores[t.name].amount += t.amount;
             });
-            compositeSA(Math.floor((c.x0 + R) / scale), Math.floor((c.y0 + R) / scale), Math.ceil(c.w / scale) + 1, Math.ceil(c.h / scale) + 1);
             doneCells++;
             setProgress(doneCells / cells.length);
             if (doneCells < cells.length) {
@@ -810,7 +790,6 @@
             }).join(" ");
             els.res.innerHTML = oreChips + ' <span class="hint">· ' + (2 * R) + "×" + (2 * R) + " tiles" +
               (scale > 1 ? " (shown ×1/" + scale.toFixed(1) + ")" : "") + " · " + pool.length + " workers · " + window.__SURF_MS__ + " ms</span>";
-            status(p.label + " · r" + radius + " · tiles + resources");
           })
           .catch(function (e) {
             if (failed) return;
@@ -843,7 +822,6 @@
         '<span class="hint">· ' + out.width + "×" + out.height + (out.downscaled ? " (shown at 1/" + out.scale.toFixed(1) + " size: this device's canvas limit)" : "") + " · " + modeTxt + " (" +
         out.cells + (out.cells === 1 ? " cell dispatch" : " cell dispatches") + ") · " + ms + " ms · " +
         (px / ms / 1000).toFixed(2) + " Mpx/s</span>";
-      status("zone " + z.n + " · " + z.t + " · r" + radius + (layer === 0 ? " (WebGPU terrain + CPU ore" : " (WebGPU") + (out.downscaled ? ", downscaled)" : ")"));
     }, function (e) {
       // WebGPU unavailable / failure -> CPU wasm pipeline for the same request.
       console.error("WebGPU terrain failed, falling back to wasm:", e);
@@ -869,16 +847,25 @@
     return found;
   }
 
+  // Stop the workers once the surface is drawn, and when the page is left.
+  // A browser allows only about a hundred live wasm instances per site
+  // process; workers that linger across a few reloads or tabs use that up, and
+  // the next page then fails with "Cannot allocate Wasm memory".
+  function releasePool() {
+    if (!pool) return;
+    for (var i = 0; i < pool.length; i++) pool[i].terminate();
+    pool = null;
+  }
+  window.addEventListener("pagehide", releasePool);
+
   function init() {
     // the shell is a static file: fill in the names it cannot know
     var nameEl = document.getElementById("sf-name");
     if (nameEl) nameEl.textContent = TARGET;
-    var crumbName = document.getElementById("sf-crumb-name");
-    if (crumbName) crumbName.textContent = TARGET;
     var crumbSeed = document.getElementById("sf-crumb-seed");
     if (crumbSeed) {
       crumbSeed.href = window.Shell.seedHref(SEED, MOD);
-      if (SEED != null) crumbSeed.textContent = "🌍 Seed " + SEED;
+      if (SEED != null) crumbSeed.textContent = "Seed: " + SEED;
     }
     if (SEED != null && TARGET) document.title = "Seed " + SEED + " · " + TARGET + " — Surface Explorer";
     if (SEED == null || !TARGET) {
@@ -896,25 +883,26 @@
       if (_ly != null && ["0", "1", "2"].indexOf(_ly) !== -1) els.layer.value = _ly;
     } catch (e2) {}
     adaptForKind();
-    els.go.addEventListener("click", run);
-    els.radius.addEventListener("change", run);
-    els.layer.addEventListener("change", run);
-    if (els.dim) els.dim.addEventListener("input", function () { compositeSA(); });
+    if (els.dim) els.dim.addEventListener("input", function () {
+      if (els.dimVal) els.dimVal.textContent = els.dim.value + "%";
+      compositeSA();
+    });
     if (kind === "sa") {
       var p = PLANETS[planetKey];
-      els.meta.innerHTML = p.label + ' <span class="hint">· seed ' + SEED + " · Space Age planet tiles, generated from the game's map-gen data (sa.wasm).</span>";
+      els.meta.innerHTML = '<span class="hint">Space Age planet tiles, generated from the game\'s map-gen data (sa.wasm).</span>';
       els.badge.textContent = "planet";
     } else if (kind === "nauvis") {
       var vanilla = MOD !== "se" && MOD !== "k2se";
-      els.meta.innerHTML = "🌍 Nauvis <span class=\"hint\">· seed " + SEED + " · game-default map settings" +
+      els.meta.innerHTML = "<span class=\"hint\">game-default map settings" +
         (vanilla
           ? ", base-game Nauvis tiles (real 2.0 tile palette; tile selection approximated until expression_in_range is ported)."
           : ", SE ground (alien-biomes, exact).") + "</span>";
     } else {
-      els.meta.innerHTML = "SE zone of seed " + SEED + " <span class=\"hint\">· resolving universe…</span>";
+      els.meta.innerHTML = '<span class="hint">resolving universe…</span>';
       fetchZone().then(function (z) {
         zone = z;
-        els.meta.innerHTML = zoneMeta(z) + ' <span class="hint">· seed ' + SEED + ", mod " + esc(MOD) + ".</span>";
+        els.badge.textContent = z.t;
+        els.meta.innerHTML = zoneMeta(z);
       }).catch(function (e) {
         status(e.message);
         console.error(e);

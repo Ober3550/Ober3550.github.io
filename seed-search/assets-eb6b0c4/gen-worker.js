@@ -14,16 +14,19 @@
       .then(function (bytes) { return WebAssembly.instantiate(bytes, {}); });
   }
 
-  // Kick off both fetches/instantiations immediately on worker startup so the
-  // first user call is instant (messages that arrive before the load finishes
-  // just await the same promise).
-  // relative to this worker script, so the folder can be served from anywhere
-  var uniP = loadWasm("universe.wasm");
-  var surfP = loadWasm("surface.wasm");
-  var saP = loadWasm("sa.wasm");
+  // Each module is fetched and instantiated on its first use, and only then:
+  // a worker that draws surface cells never needs the universe generator, and
+  // every instance counts against the browser's limit of about a hundred live
+  // wasm instances per site. (URLs are relative to this worker script, so the
+  // folder can be served from anywhere.)
+  var loaded = {};
+  function wasm(name) {
+    if (!loaded[name]) loaded[name] = loadWasm(name);
+    return loaded[name];
+  }
 
   function generateUniverse(seed, k2) {
-    return uniP.then(function (inst) {
+    return wasm("universe.wasm").then(function (inst) {
       var e = inst.instance.exports;
       e.generate(seed >>> 0, k2 ? 1 : 0);
       var bytes = new Uint8Array(e.memory.buffer, e.resultPtr(), e.resultLen());
@@ -32,7 +35,7 @@
   }
 
   function generateSA(req) {
-    return saP.then(function (inst) {
+    return wasm("sa.wasm").then(function (inst) {
       var e = inst.instance.exports;
       var bytes = new TextEncoder().encode(JSON.stringify(req));
       if (bytes.length > e.inputCap()) {
@@ -50,7 +53,7 @@
   }
 
   function generateSurface(req) {
-    return surfP.then(function (inst) {
+    return wasm("surface.wasm").then(function (inst) {
       var e = inst.instance.exports;
       var bytes = new TextEncoder().encode(JSON.stringify(req));
       // growInput may grow wasm memory → re-create the view afterwards.
@@ -74,6 +77,8 @@
 
   self.onmessage = function (ev) {
     var msg = ev.data;
+    // { preload: "universe.wasm" }: start loading a module ahead of its first call
+    if (msg && msg.preload) { wasm(msg.preload).catch(function () {}); return; }
     if (!msg || msg.id == null) return;
     if (msg.type === "universe") {
       generateUniverse(msg.seed, msg.k2).then(
