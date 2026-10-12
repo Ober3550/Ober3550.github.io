@@ -309,21 +309,36 @@
       var done = 0;
       var failed = 0;
 
-      var ore = !oreCv ? Promise.resolve(null) : streamOre(zoneObj, R, diskR, palette, oreCv, function (n, total) {
-        // the terrain's progress is shown until it is done, then the ore's
-        if (layer === 2 || done === cells.length) {
-          status("placing ore " + n + "/" + total + " cells…");
-          setProgress(total ? n / total : 0);
-        }
-      }).then(function (t) { totals = t; }, function (e) {
-        failed++;
-        console.error("ore pass failed:", e);
-      });
+      // (an exact zone's ore needs the finished terrain: it starts after it)
+      var exact = layer === 0 && exactZone(zoneObj, true);
+      function startOre(terrain) {
+        return streamOre(zoneObj, R, diskR, palette, oreCv, function (n, total) {
+          // the terrain's progress is shown until it is done, then the ore's
+          if (layer === 2 || done === cells.length) {
+            status("placing ore " + n + "/" + total + " cells…");
+            setProgress(total ? n / total : 0);
+          }
+        }, terrain).then(function (t) { totals = t; }, function (e) {
+          failed++;
+          console.error("ore pass failed:", e);
+        });
+      }
+      function canvasTiles(c) {
+        return new Uint8Array(ctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
+      }
+      var ore = !oreCv ? Promise.resolve(null) : exact ? null : startOre(null);
 
-      // enemy areas after the ore, in the same lane
-      var enemies = layer === 0 && zoneHasEnemies(zoneObj) ? streamEnemies(zoneObj, R, diskR, palette, npx, function (n, total) {
-        if (n < total) status("mapping enemy bases " + n + "/" + total + " cells…");
-      }) : Promise.resolve();
+      // The enemy areas / entities come last: the entities are placed on the
+      // terrain as drawn, read back from the canvas.
+      function enemies() {
+        if (layer !== 0 || !wantsEntityLayer(zoneObj, true)) return null;
+        var ents = entitySurface(zoneObj, true);
+        return streamEnemies(zoneObj, R, diskR, palette, npx, function (n, total) {
+          if (n < total) status("placing " + (ents ? "entities " : "enemy bases ") + n + "/" + total + " cells…");
+        }, ents ? function (c) {
+          return new Uint8Array(ctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
+        } : null);
+      }
 
       function terrainCell(cell) {
         return sendToPool({
@@ -358,9 +373,9 @@
       for (var c = 0; c < cells.length; c++) jobs.push(terrainCell(cells[c]));
       // All terrain cells, then the ore overlay and the enemy areas, then resolve.
       Promise.all(jobs).then(function () {
-        return ore;
+        return exact ? startOre(canvasTiles) : ore;
       }).then(function () {
-        return enemies;
+        return enemies();
       }).then(finish, finish);
     });
   }
@@ -393,8 +408,13 @@
   // side, or smaller when the surface is shown downscaled (a phone's canvas
   // limit): cells are then drawn scaled down to it. `onProgress(done, total)`
   // is called after each cell. Resolves to { name: { amount, display } }.
+  //
+  // `terrain(cell)`, when given (see exactZone), returns the cell's terrain
+  // pixels as drawn: the ore then comes from the data-driven pass, which
+  // places it the way the game does on those tiles. (The entities follow in
+  // a pass of their own once the ore is complete - streamEnemies.)
   var ORE_CELL = 256;
-  function streamOre(z, R, diskR, palette, oreCv, onProgress) {
+  function streamOre(z, R, diskR, palette, oreCv, onProgress, terrain) {
     var octx = oreCv.getContext("2d");
     var scale = (2 * R) / oreCv.width; // tiles per canvas pixel
     octx.imageSmoothingEnabled = true;
@@ -404,13 +424,17 @@
       for (var x = Math.floor(-R / ORE_CELL) * ORE_CELL; x < R; x += ORE_CELL) {
         var c = { x0: Math.max(x, -R), y0: Math.max(y, -R), x1: Math.min(x + ORE_CELL, R), y1: Math.min(y + ORE_CELL, R) };
         // (cells wholly off the disk draw nothing but still count: the totals
-        // are for the whole square, as they always were)
+        // are for the whole square, as they always were - except with the
+        // data-driven pass, which places nothing past the surface's edge)
+        if (terrain) {
+          var nx = Math.max(c.x0, Math.min(0, c.x1 - 1)), ny = Math.max(c.y0, Math.min(0, c.y1 - 1));
+          if (nx * nx + ny * ny > R2) continue;
+        }
         c.d2 = Math.pow((c.x0 + c.x1) / 2, 2) + Math.pow((c.y0 + c.y1) / 2, 2);
         cells.push(c);
       }
     }
     cells.sort(function (a, b) { return a.d2 - b.d2; });
-
     var totals = {};
     var wells = [];   // [tile x, tile y, FLUID_COLORS index, ...]
     var done = 0;
@@ -433,11 +457,16 @@
       }
     }
     var jobs = cells.map(function (c) {
-      return sendToPool({
+      var tiles = terrain ? terrain(c) : null;
+      return sendToPool(tiles ? {
+        seed: SEED, k2: K2, zone: z, layer: 4, radius: diskR, tiles_in: true, entities: false,
+        rect: { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1 }
+      } : {
         seed: SEED, k2: K2, zone: z, layer: 0, radius: diskR, terrainless: true,
         palette: palette, rect: { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1 }, square: squareSurface(z)
-      }, "surface", "ore").then(function (r) {
+      }, "surface", "ore", tiles).then(function (r) {
         var w = c.x1 - c.x0, h = c.y1 - c.y0, px = r.pixels, mine = [];
+        if (tiles) px = px.subarray(0, w * h * 4); // (the second image is for the entities)
         for (var row = 0; row < h; row++) {
           var ty = c.y0 + row;
           for (var col = 0; col < w; col++) {
@@ -568,20 +597,21 @@
     return oreOverlayEl;
   }
 
-  // ── Enemy base areas ──────────────────────────────────────────────────────
+  // ── Enemy base areas / entities ───────────────────────────────────────────
   // A third canvas between the terrain and the ore: translucent red wherever
   // the game can place a nest (spawners and worms), stronger where that is
   // likelier - or, on a Space Age planet, the entities themselves (rocks,
   // trees, plants, nests). It is drawn once; the checkbox only shows or
   // hides the canvas. ?entities=0 (or ?enemies=0) skips generating it.
   var ENEMIES = !/[?&](enemies|entities)=0\b/.test(location.search);
-  var ENTITIES_HINT = "Rocks, trees, cliffs and enemy nests, placed the way the game places them. Counts and clusters match the game; exact positions only where every tile of the chunk matches too.";
-  var ENEMY_AREAS_HINT = "Red marks where the game can place enemy nests (spawners and worms), stronger where a nest is likelier. These are the areas, not the individual nests.";
+  var SE_HIDDEN_GROUPS = ["rocks", "huge"];
   var enemyOverlayEl = null;
-  // Entities come in one canvas, each class in its own colour (classColor in
-  // sa_surface.zig). The per-group checkboxes hide groups by showing a copy
-  // of that canvas with the unticked groups' pixels left out - made only
-  // while something is unticked, so the usual case costs no extra canvas.
+  // Entities arrive in one image, each class in its own colour (classColor
+  // in sa_surface.zig), and are kept on two canvases: the trees under the ore
+  // (ore shows through a forest, as on the game's map) and everything else -
+  // nests, rocks, cliffs - over it. Hiding the trees hides their canvas; the
+  // other per-group checkboxes show a copy of the upper canvas with the
+  // unticked groups' pixels left out - made only while one is unticked.
   var ENTITY_GROUPS = {
     enemies: [[255, 40, 40], [255, 64, 40]],
     trees: [[50, 92, 44], [62, 104, 52]],
@@ -591,19 +621,32 @@
   };
   var entityMode = false;   // the overlay holds entities (else enemy areas)
   var entityViewEl = null;  // the filtered copy, while a group is hidden
+  var treeEl = null;        // the trees, under the ore
+  var LOWER_GROUPS = ["trees"];
   function enemyOverlayClear() {
     if (enemyOverlayEl) { enemyOverlayEl.remove(); enemyOverlayEl = null; }
+    if (treeEl) { treeEl.remove(); treeEl = null; }
+    seamsClear();
     if (entityViewEl) { entityViewEl.remove(); entityViewEl = null; }
     if (els.enemyWrap) els.enemyWrap.hidden = true;
   }
   // label = "Entities": the per-group checkboxes; otherwise the one checkbox
-  function enemyOverlay(px, label, hint) {
+  // `off`: the groups whose checkbox starts unticked on this surface
+  function enemyOverlay(px, label, off) {
     enemyOverlayClear();
-    enemyOverlayEl = overlayCanvas(px, 1);
     entityMode = label === "Entities";
+    // enemy areas lie under the ore; entities other than trees over it
+    enemyOverlayEl = overlayCanvas(px, entityMode ? 3 : 1);
+    if (entityMode) {
+      treeEl = overlayCanvas(px, 1);
+      // (read back whenever a group is hidden)
+      enemyOverlayEl.getContext("2d", { willReadFrequently: true });
+      if (els.groups) els.groups.querySelectorAll("input[data-group]").forEach(function (cb) {
+        cb.checked = !off || off.indexOf(cb.dataset.group) === -1;
+      });
+    }
     if (els.enemyWrap) {
       els.enemyWrap.hidden = false;
-      els.enemyWrap.title = hint || ENEMY_AREAS_HINT;
       if (els.areas) els.areas.hidden = entityMode;
       if (els.groups) els.groups.hidden = !entityMode;
     }
@@ -614,6 +657,38 @@
     var off = [];
     if (els.groups) els.groups.querySelectorAll("input[data-group]").forEach(function (cb) { if (!cb.checked) off.push(cb.dataset.group); });
     return off;
+  }
+  // the hidden groups of the upper canvas
+  function hiddenUpper() {
+    return hiddenGroups().filter(function (g) { return LOWER_GROUPS.indexOf(g) === -1; });
+  }
+  // Draw one cell of entity pixels (RGBA, w x h) at (dx, dy), dw x dh on the
+  // canvases: the trees onto the tree canvas, everything else onto the entity
+  // canvas. Drawn over what is there - an entity on a cell's edge reaches
+  // into the next cell, whose own transparent pixels must not erase it.
+  function drawEntityCell(px, w, h, dx, dy, dw, dh) {
+    var low = new Uint8ClampedArray(w * h * 4), up = new Uint8ClampedArray(w * h * 4);
+    var anyLow = false, anyUp = false, cols = [];
+    LOWER_GROUPS.forEach(function (g) { ENTITY_GROUPS[g].forEach(function (c) { cols.push(c); }); });
+    for (var i = 0; i < w * h * 4; i += 4) {
+      if (!px[i + 3]) continue;
+      var isLow = false;
+      for (var k = 0; k < cols.length; k++) {
+        if (px[i] === cols[k][0] && px[i + 1] === cols[k][1] && px[i + 2] === cols[k][2]) { isLow = true; break; }
+      }
+      var t = isLow ? low : up;
+      t[i] = px[i]; t[i + 1] = px[i + 1]; t[i + 2] = px[i + 2]; t[i + 3] = px[i + 3];
+      if (isLow) anyLow = true; else anyUp = true;
+    }
+    [[up, enemyOverlayEl, anyUp], [low, treeEl, anyLow]].forEach(function (job) {
+      if (!job[2] || !job[1]) return;
+      var cx = cellCanvas(w, h);
+      cx.putImageData(new ImageData(job[0], w, h), 0, 0);
+      var ctx = job[1].getContext("2d");
+      ctx.imageSmoothingEnabled = dw !== w;
+      ctx.drawImage(cellCv, 0, 0, w, h, dx, dy, dw, dh);
+    });
+    if (anyUp) entitiesDrawn(dx, dy, dw, dh);
   }
   // Copy a rect of the entity canvas to the filtered view without the
   // hidden groups (a pixel belongs to the group whose colour it is nearest,
@@ -647,27 +722,133 @@
       enemyOverlayEl.style.display = !els.enemy || els.enemy.checked ? "" : "none";
       return;
     }
-    var off = hiddenGroups();
+    if (treeEl) treeEl.style.display = hiddenGroups().indexOf("trees") === -1 ? "" : "none";
+    var off = hiddenUpper();
     if (!off.length) {
       if (entityViewEl) { entityViewEl.remove(); entityViewEl = null; }
       enemyOverlayEl.style.display = "";
       return;
     }
-    if (!entityViewEl) entityViewEl = overlayCanvas(enemyOverlayEl.width, 1);
+    if (!entityViewEl) entityViewEl = overlayCanvas(enemyOverlayEl.width, 3);
     enemyOverlayEl.style.display = "none";
     filterEntities(0, 0, enemyOverlayEl.width, enemyOverlayEl.height, off);
   }
   // after new entities were drawn into a rect: bring the filtered view up to date
   function entitiesDrawn(x, y, w, h) {
-    if (!entityViewEl) return;
+    if (!entityViewEl || !enemyOverlayEl) return;
     x = Math.max(0, Math.floor(x)); y = Math.max(0, Math.floor(y));
     w = Math.min(enemyOverlayEl.width - x, Math.ceil(w) + 1); h = Math.min(enemyOverlayEl.height - y, Math.ceil(h) + 1);
-    if (w > 0 && h > 0) filterEntities(x, y, w, h, hiddenGroups());
+    if (w > 0 && h > 0) filterEntities(x, y, w, h, hiddenUpper());
   }
   // Does this SE surface have enemies to map? (Nauvis always; a zone by its
   // enemy tag; never an asteroid field.)
   function zoneHasEnemies(z) {
     return ENEMIES && z.t !== "asteroid-field" && (!!z.nauvis || (!!z.enemy && z.enemy !== "none"));
+  }
+  // A Space Exploration planet, moon or Nauvis.
+  function seSolid(z) {
+    return (MOD === "se" || MOD === "k2se") && !!z && z.t !== "asteroid-field";
+  }
+  // Does the layer hold the entities themselves (rocks, trees, cliffs, nests)
+  // rather than the enemy areas? Base-game Nauvis always; an SE surface when
+  // the terrain is on the canvas at full size (`fullSize`), since its
+  // entities are placed on those tiles - a surface too large for that keeps
+  // the enemy areas.
+  function entitySurface(z, fullSize) {
+    return squareSurface(z) || (seSolid(z) && !!fullSize);
+  }
+  // ── Core seams ────────────────────────────────────────────────────────────
+  // Where a core miner can be built. Space Exploration does not autoplace
+  // them: CoreMiner.generate_core_seam_positions walks a golden-angle spiral
+  // out from the centre, one seam per band, with a random generator seeded by
+  // the zone's seed - so they follow from the seed exactly (checked against
+  // the game on five surfaces).
+  function coreSeams(seed, radius) {
+    var s = seed >>> 0;
+    if (s < 341) s = 341;
+    var a = s, b = s, c = s;
+    function rnd() { // the game's generator, a float in [0, 1)
+      a = (((a & 0xFFFFFFFE) << 12) ^ (((a << 13) ^ a) >>> 19)) >>> 0;
+      b = (((b & 0xFFFFFFF8) << 4) ^ (((b << 2) ^ b) >>> 25)) >>> 0;
+      c = (((c & 0xFFFFFFF0) << 17) ^ (((c << 3) ^ c) >>> 11)) >>> 0;
+      return ((a ^ b ^ c) >>> 0) * 2.3283064365386963e-10;
+    }
+    var target = 5 + 95 * (radius / 10000), band = radius / (target + 2), phi = (1 + Math.sqrt(5)) / 2;
+    var build = function (v) { return Math.floor(v + (v >= 0 ? 0 : 1 / 256)) + 0.5; };
+    var out = [];
+    for (var i = 1; i <= target; i++) {
+      var o = i * phi + 0.2 * rnd(), d = (i + rnd()) * band;
+      out.push([build(d * Math.sin(o * 2 * Math.PI)), build(-d * Math.cos(o * 2 * Math.PI))]);
+    }
+    return out;
+  }
+  window.__coreSeams = coreSeams; // test hook
+  // The surface's core seams as icons laid over the map: one element per
+  // seam, positioned by its coordinates (so they stay crisp at any map size)
+  // and filled with the colour of the zone's core resource - its primary; the
+  // homeworld's mixed fragments keep the game icon's blue. Hovering one gives
+  // its coordinates.
+  var SEAM_SVG = '<svg viewBox="0 0 24 22" aria-hidden="true">' +
+    '<path class="seam-bg" d="M12 1.6 22.4 20.2H1.6Z" stroke="#0d1117" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path fill="#0d1117" d="M9.4 7h5.2v2.3H9.4zM10.1 9.8h3.8l-.5 2h-2.8zM10.7 12.3h2.6l-.4 1.9h-1.8zM11.2 14.7h1.6L12 18.2zM5.6 18.4h3.6v1H5.6zM14.8 18.4h3.6v1h-3.6z"/></svg>';
+  var seamEl = null;
+  function seamsClear() {
+    if (seamEl) { seamEl.remove(); seamEl = null; }
+    var label = document.getElementById("sf-seams");
+    if (label) label.hidden = true;
+  }
+  function showSeams() {
+    var cb = document.getElementById("sf-seams-cb");
+    if (seamEl) seamEl.hidden = !!cb && !cb.checked;
+  }
+  function drawSeams(z, R) {
+    if (!ENEMIES || !seSolid(z)) return Promise.resolve();
+    var owner = enemyOverlayEl;
+    var zone = z.nauvis
+      ? (universe ? Promise.resolve(universe) : window.generateUniverse(SEED, K2)).then(function (u) { return { s: u.hs, r: u.hr }; })
+      : Promise.resolve({ s: z.s, r: z.r });
+    return zone.then(function (q) {
+      if (!q.s || !q.r || enemyOverlayEl !== owner) return;
+      seamsClear();
+      var box = els.canvas.parentNode;
+      box.style.position = "relative";
+      seamEl = document.createElement("div");
+      seamEl.className = "seam-layer" + (z.p ? " ore-" + nm(z.p) : "");
+      seamEl.style.left = els.canvas.offsetLeft + "px";
+      seamEl.style.top = els.canvas.offsetTop + "px";
+      var what = "Core seam" + (z.p ? " · " + nm(z.p) : "");
+      var list = [];
+      coreSeams(q.s, q.r).forEach(function (p) {
+        if (p[0] * p[0] + p[1] * p[1] > R * R) return; // outside the disk being drawn
+        list.push(p);
+        var el = document.createElement("div");
+        el.className = "seam-icon";
+        el.style.left = ((p[0] + R) / (2 * R) * 100) + "%";
+        el.style.top = ((p[1] + R) / (2 * R) * 100) + "%";
+        el.title = what + " · x " + Math.floor(p[0]) + ", y " + Math.floor(p[1]);
+        el.innerHTML = SEAM_SVG;
+        seamEl.appendChild(el);
+      });
+      window.__SEAMS__ = list; // test hook: [[x, y], ...]
+      box.appendChild(seamEl);
+      var label = document.getElementById("sf-seams");
+      if (label) label.hidden = list.length === 0;
+      var count = document.getElementById("sf-seams-n");
+      if (count) count.textContent = "(" + list.length + ")";
+      showSeams();
+    }, function (e) { console.error("core seams failed:", e); });
+  }
+
+  // A Space Exploration planet or moon drawn at full size: its ore and its
+  // entities come from one data-driven pass over the terrain's tiles
+  // (streamOre with `terrain`), which matches the game's ore tile for tile
+  // where the older ore code does not. Not with Krastorio 2 (its resources
+  // are not in the data file) and not Nauvis.
+  function exactZone(z, fullSize) {
+    return MOD === "se" && !!z && !z.nauvis && (z.t === "planet" || z.t === "moon") && !!fullSize;
+  }
+  function wantsEntityLayer(z, fullSize) {
+    return ENEMIES && (entitySurface(z, fullSize) || zoneHasEnemies(z));
   }
   // The enemy areas of an SE zone / Nauvis for the square [-R,R)^2, onto a new
   // enemy canvas of `px` a side: one request per chunk-aligned cell, nearest
@@ -678,8 +859,11 @@
   // terrain pixels as already drawn, which saves that request working the
   // tiles out again.
   function streamEnemies(z, R, diskR, palette, px, onProgress, terrain) {
-    var entities = squareSurface(z);
-    var ectx = (entities ? enemyOverlay(px, "Entities", ENTITIES_HINT) : enemyOverlay(px)).getContext("2d");
+    // (an SE surface's entities need the terrain's tiles)
+    var entities = entitySurface(z, !!terrain);
+    // alien-biomes rocks are flagged "not-on-map": the game's own map does not
+    // draw them, so on an SE surface they start hidden
+    var ectx = (entities ? enemyOverlay(px, "Entities", squareSurface(z) ? null : SE_HIDDEN_GROUPS) : enemyOverlay(px)).getContext("2d");
     var scale = (2 * R) / px;
     ectx.imageSmoothingEnabled = true;
     var cells = [];
@@ -698,22 +882,25 @@
     return Promise.all(cells.map(function (c) {
       var tiles = terrain ? terrain(c) : null;
       return sendToPool({
-        seed: SEED, k2: K2, zone: z, layer: 3, radius: diskR, palette: palette, tiles_in: !!tiles,
+        seed: SEED, k2: K2, zone: z, layer: 3, radius: diskR, palette: palette, tiles_in: !!tiles, entities: entities,
         rect: { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1 }, square: squareSurface(z)
       }, "surface", "ore", tiles).then(function (r) {
         var w = c.x1 - c.x0, h = c.y1 - c.y0;
-        if (r.summary.enemy_tiles) {
+        if (r.summary.enemy_tiles && entities) {
+          drawEntityCell(r.pixels, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
+        } else if (r.summary.enemy_tiles) {
           var cx = cellCanvas(w, h);
           var img = cx.createImageData(w, h);
           img.data.set(r.pixels);
           cx.putImageData(img, 0, 0);
           ectx.drawImage(cellCv, 0, 0, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
-          entitiesDrawn((c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
         }
         done++;
         if (onProgress) onProgress(done, cells.length);
       }, function (e) { console.error("enemy areas cell failed:", e); });
-    }));
+    })).then(function () {
+      return drawSeams(z, R);
+    });
   }
 
   // Terrain brightness from the slider. (Only under ore: a terrain-only view
@@ -801,11 +988,16 @@
         // downscaled surface it is drawn scaled down like the terrain.
         var oreCv = layer === 0 ? oreOverlay(disp) : null;
         var terrainDone = false;
-        var oreP = !oreCv ? null : streamOre(z, R, diskR, palette, oreCv, function (n, total) {
-          if (!terrainDone) return; // the terrain's progress is shown first
-          status("placing ore (CPU wasm) " + n + "/" + total + " cells…");
-          setProgress(total ? n / total : 0);
-        });
+        // (an exact zone's ore needs the finished terrain: it starts after it)
+        var exact = !!oreCv && exactZone(z, scaleS === 1);
+        var startOre = function (terrain) {
+          return streamOre(z, R, diskR, palette, oreCv, function (n, total) {
+            if (!terrainDone) return; // the terrain's progress is shown first
+            status("placing ore (CPU wasm) " + n + "/" + total + " cells…");
+            setProgress(total ? n / total : 0);
+          }, terrain);
+        };
+        var oreP = !oreCv || exact ? null : startOre(null);
         if (oreP) oreP.catch(function () {}); // reported where it is awaited below
         var oreDone = false;
         var gpuKind, backend, label;
@@ -842,10 +1034,12 @@
             setProgress(c.total ? c.done / c.total : 0);
           }
         }).then(function (cells) {
-          // The alien-biomes kernel has no starting lake (SE moons have none),
-          // but Nauvis does. The lake sits within ~105 tiles of spawn, so the
-          // square around spawn is redrawn from the CPU renderer, which has it.
-          if (!seNauvis || scaleS !== 1) return cells;
+          // The alien-biomes kernel has no starting lake, but every surface
+          // with water has one. The lake sits within ~105 tiles of spawn, so
+          // the square around spawn is redrawn from the CPU renderer, which
+          // has it.
+          var lake = seNauvis || (kind === "zone" && z.t !== "asteroid-field" && !!z.water && z.water !== "none");
+          if (!lake || scaleS !== 1) return cells;
           var h = Math.min(128, R);
           return sendToPool({
             seed: SEED, k2: K2, zone: z, layer: 1, radius: R, palette: "se",
@@ -867,18 +1061,32 @@
           // base-game Nauvis can take its tiles from the canvas (when it is
           // drawn at full size) rather than work them out again.
           var tctx = els.canvas.getContext("2d");
-          var enemyP = oreCv && zoneHasEnemies(z) ? streamEnemies(z, R, diskR, palette, disp, function (n, total) {
-            if (oreDone && n < total) status("mapping " + (squareSurface(z) ? "entities " : "enemy bases ") + n + "/" + total + " cells…");
-          }, squareSurface(z) && scaleS === 1 ? function (c) {
-            return new Uint8Array(tctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
-          } : null) : Promise.resolve();
+          var ents = entitySurface(z, scaleS === 1);
+          if (exact) {
+            terrainDone = true;
+            oreP = startOre(function (c) {
+              return new Uint8Array(tctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
+            });
+          }
+          // the entities start once the ore is complete
+          var startEnemies = function () {
+            if (!oreCv || !wantsEntityLayer(z, scaleS === 1)) return Promise.resolve();
+            return streamEnemies(z, R, diskR, palette, disp, function (n, total) {
+              if (n < total) {
+                status("placing " + (ents ? "entities " : "enemy bases ") + n + "/" + total + " cells…");
+                setProgress(total ? n / total : 0);
+              }
+            }, ents && scaleS === 1 ? function (c) {
+              return new Uint8Array(tctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
+            } : null);
+          };
           if (oreP) {
             window.__GPU_STAGE__ = "ore";
             terrainDone = true;
             status("gpu terrain ready — placing ore (CPU wasm)…");
             return oreP.then(function (totals) {
               oreDone = true;
-              return enemyP.then(function () {
+              return startEnemies().then(function () {
                 window.__GPU_STAGE__ = "done";
                 return { out: out, z: z, totals: totals };
               });
@@ -914,16 +1122,6 @@
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(cellCv, 0, 0, w, h, tx / scale, ty / scale, w / scale, h / scale);
       };
-      // like blit, but drawn over what is there: an entity on a cell's edge
-      // reaches into the next cell, whose own (transparent) pixels must not erase it
-      var blitOver = function (ctx, w, h, px, tx, ty) {
-        var cx = cellCanvas(w, h);
-        var cimg = cx.createImageData(w, h);
-        cimg.data.set(px);
-        cx.putImageData(cimg, 0, 0);
-        ctx.imageSmoothingEnabled = scale !== 1;
-        ctx.drawImage(cellCv, 0, 0, w, h, tx / scale, ty / scale, w / scale, h / scale);
-      };
       var run_ = sa;
       var tctx = els.canvas.getContext("2d");
       var octx = oreOverlay(disp).getContext("2d");
@@ -953,9 +1151,9 @@
             blit(octx, r.summary.width, r.summary.height, r.pixels.subarray(n, 2 * n), c.x0 + R, c.y0 + R);
             if (r.summary.entity_layer && ENEMIES) {
               // third layer: the planet's rocks, trees, plants and nests
-              if (!ectx) ectx = enemyOverlay(disp, "Entities", ENTITIES_HINT).getContext("2d");
-              blitOver(ectx, r.summary.width, r.summary.height, r.pixels.subarray(2 * n, 3 * n), c.x0 + R, c.y0 + R);
-              entitiesDrawn((c.x0 + R) / scale, (c.y0 + R) / scale, r.summary.width / scale, r.summary.height / scale);
+              if (!ectx) ectx = enemyOverlay(disp, "Entities").getContext("2d");
+              drawEntityCell(r.pixels.subarray(2 * n, 3 * n), r.summary.width, r.summary.height,
+                (c.x0 + R) / scale, (c.y0 + R) / scale, r.summary.width / scale, r.summary.height / scale);
             }
             (r.summary.tiles || []).forEach(function (t) {
               if (!counts[t.name]) counts[t.name] = { color: t.color, count: 0 };
@@ -1082,6 +1280,8 @@
     adaptForKind();
     if (els.enemy) els.enemy.addEventListener("change", showEnemies);
     if (els.groups) els.groups.addEventListener("change", showEnemies);
+    var seamsCb = document.getElementById("sf-seams-cb");
+    if (seamsCb) seamsCb.addEventListener("change", showSeams);
     if (els.dim) els.dim.addEventListener("input", function () {
       if (els.dimVal) els.dimVal.textContent = els.dim.value + "%";
       compositeSA();
