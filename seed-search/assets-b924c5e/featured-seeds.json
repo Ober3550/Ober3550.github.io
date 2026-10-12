@@ -2,7 +2,7 @@
  "configs": {
   "se": {
    "searched": 4294967296,
-   "rule": "the seeds with a vulcanite + cryonite + holmium surface, the best 100 with the four surfaces apart, and every seed with 5 or more productivity modules",
+   "rule": "the seeds with a vulcanite + cryonite + holmium surface, the best 100 with the four surfaces apart, and every seed with 5 or more productivity modules; the vitamelange + stone surface is vitamelange-primary",
    "seeds": [
     {
      "seed": 2046902924,
@@ -161,45 +161,6 @@
      }
     },
     {
-     "seed": 1138870420,
-     "loot": "PESSEPSPEPSEP",
-     "planets": 14,
-     "bodies": 55,
-     "naquiumDv": 21900,
-     "z1": {
-      "n": "Semiele",
-      "t": "moon",
-      "r": 725,
-      "dv": 8085,
-      "e": "high",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Tarn",
-      "t": "moon",
-      "r": 1275,
-      "dv": 5829,
-      "e": "low",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Infamani",
-      "t": "moon",
-      "r": 1281,
-      "dv": 6214,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Orbadon",
-      "t": "moon",
-      "r": 1697,
-      "dv": 8429,
-      "e": "very_low",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 3309276638,
      "loot": "PESPSEEEPPSSE",
      "planets": 14,
@@ -235,45 +196,6 @@
       "r": 2509,
       "dv": 3711,
       "e": "med",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2032187456,
-     "loot": "PSSPEEESSPEPP",
-     "planets": 14,
-     "bodies": 58,
-     "naquiumDv": 21619,
-     "z1": {
-      "n": "Sakimi",
-      "t": "moon",
-      "r": 1164,
-      "dv": 5804,
-      "e": "none",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Elolis",
-      "t": "moon",
-      "r": 1006,
-      "dv": 6816,
-      "e": "very_high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Impetus",
-      "t": "moon",
-      "r": 1958,
-      "dv": 5045,
-      "e": "high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Mina",
-      "t": "moon",
-      "r": 2076,
-      "dv": 8537,
-      "e": "low",
       "c": "vs"
      }
     },
@@ -317,41 +239,41 @@
      }
     },
     {
-     "seed": 3900317886,
-     "loot": "PSESPEEPSPSES",
+     "seed": 2032187456,
+     "loot": "PSSPEEESSPEPP",
      "planets": 14,
-     "bodies": 51,
-     "naquiumDv": 31446,
+     "bodies": 58,
+     "naquiumDv": 21619,
      "z1": {
-      "n": "Yaegner",
+      "n": "Sakimi",
       "t": "moon",
-      "r": 2013,
-      "dv": 7488,
-      "e": "very_high",
+      "r": 1164,
+      "dv": 5804,
+      "e": "none",
       "c": "vi"
      },
      "z2": {
-      "n": "Solsolace",
+      "n": "Elolis",
       "t": "moon",
-      "r": 1177,
-      "dv": 547,
-      "e": "none",
+      "r": 1006,
+      "dv": 6816,
+      "e": "very_high",
       "c": "ch"
      },
      "be": {
-      "n": "Vyse",
-      "t": "planet",
-      "r": 4167,
-      "dv": 8940,
-      "e": "max",
+      "n": "Impetus",
+      "t": "moon",
+      "r": 1958,
+      "dv": 5045,
+      "e": "high",
       "c": "be"
      },
      "vs": {
-      "n": "Hyrean",
-      "t": "moon",
-      "r": 2328,
-      "dv": 7262,
-      "e": "med",
+      "n": "Antsoutwelt",
+      "t": "planet",
+      "r": 9700,
+      "dv": 8791,
+      "e": "max",
       "c": "vs"
      }
     },
@@ -668,45 +590,6 @@
      }
     },
     {
-     "seed": 931700488,
-     "loot": "PSSEEPSPESPEE",
-     "planets": 14,
-     "bodies": 60,
-     "naquiumDv": 48259,
-     "z1": {
-      "n": "Acheron",
-      "t": "moon",
-      "r": 1977,
-      "dv": 6671,
-      "e": "none",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Adikia",
-      "t": "moon",
-      "r": 2888,
-      "dv": 10113,
-      "e": "max",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Riza",
-      "t": "moon",
-      "r": 1520,
-      "dv": 9229,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Tango",
-      "t": "planet",
-      "r": 6807,
-      "dv": 7030,
-      "e": "high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 152759406,
      "loot": "PSESPESPEESPP",
      "planets": 14,
@@ -742,6 +625,45 @@
       "r": 3519,
       "dv": 3497,
       "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1881309150,
+     "loot": "PSPESEEPSSPEE",
+     "planets": 14,
+     "bodies": 53,
+     "naquiumDv": 50537,
+     "z1": {
+      "n": "Willownezz",
+      "t": "moon",
+      "r": 2771,
+      "dv": 1967,
+      "e": "very_low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Rhadaman",
+      "t": "moon",
+      "r": 1807,
+      "dv": 3343,
+      "e": "max",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Evadome",
+      "t": "moon",
+      "r": 1554,
+      "dv": 10146,
+      "e": "low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Sansara",
+      "t": "moon",
+      "r": 724,
+      "dv": 9799,
+      "e": "none",
       "c": "vs"
      }
     },
@@ -863,45 +785,6 @@
      }
     },
     {
-     "seed": 4242141340,
-     "loot": "PESPESSPEEPSP",
-     "planets": 14,
-     "bodies": 52,
-     "naquiumDv": 27641,
-     "z1": {
-      "n": "Willownezz",
-      "t": "planet",
-      "r": 4051,
-      "dv": 5392,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Berky",
-      "t": "planet",
-      "r": 8328,
-      "dv": 10883,
-      "e": "low",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Ajax",
-      "t": "moon",
-      "r": 471,
-      "dv": 4189,
-      "e": "high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Infernox",
-      "t": "moon",
-      "r": 1025,
-      "dv": 3044,
-      "e": "low",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2273209920,
      "loot": "PSEPSEPPESESE",
      "planets": 14,
@@ -1010,11 +893,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Respitia",
+      "n": "Antsoutwelt",
       "t": "moon",
-      "r": 1177,
-      "dv": 713,
-      "e": "none",
+      "r": 3727,
+      "dv": 9791,
+      "e": "max",
       "c": "vs"
      }
     },
@@ -1049,11 +932,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Sage",
+      "n": "Alfrind",
       "t": "moon",
-      "r": 930,
-      "dv": 6302,
-      "e": "max",
+      "r": 434,
+      "dv": 6909,
+      "e": "very_high",
       "c": "vs"
      }
     },
@@ -1092,84 +975,6 @@
       "t": "moon",
       "r": 840,
       "dv": 9737,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2476420384,
-     "loot": "PSSEEPEPPSSEP",
-     "planets": 14,
-     "bodies": 52,
-     "naquiumDv": 36510,
-     "z1": {
-      "n": "Snek",
-      "t": "planet",
-      "r": 9000,
-      "dv": 9076,
-      "e": "none",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Culga",
-      "t": "moon",
-      "r": 1177,
-      "dv": 600,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Aberdon",
-      "t": "moon",
-      "r": 1227,
-      "dv": 11293,
-      "e": "very_high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Shakok",
-      "t": "moon",
-      "r": 4000,
-      "dv": 11753,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 3023064844,
-     "loot": "PSSEEPEESSPPS",
-     "planets": 14,
-     "bodies": 53,
-     "naquiumDv": 58984,
-     "z1": {
-      "n": "Tigris",
-      "t": "planet",
-      "r": 5279,
-      "dv": 6000,
-      "e": "low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Lamplika",
-      "t": "planet",
-      "r": 6322,
-      "dv": 8017,
-      "e": "med",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Hypnos",
-      "t": "moon",
-      "r": 1025,
-      "dv": 4393,
-      "e": "very_high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Vionette",
-      "t": "moon",
-      "r": 3495,
-      "dv": 11754,
       "e": "none",
       "c": "vs"
      }
@@ -1244,11 +1049,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Witfalla",
-      "t": "moon",
-      "r": 2038,
-      "dv": 5029,
-      "e": "very_high",
+      "n": "Yggdrasil",
+      "t": "planet",
+      "r": 4030,
+      "dv": 6839,
+      "e": "very_low",
       "c": "vs"
      }
     },
@@ -1370,45 +1175,6 @@
      }
     },
     {
-     "seed": 1881309150,
-     "loot": "PSPESEEPSSPEE",
-     "planets": 14,
-     "bodies": 53,
-     "naquiumDv": 50537,
-     "z1": {
-      "n": "Willownezz",
-      "t": "moon",
-      "r": 2771,
-      "dv": 1967,
-      "e": "very_low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Rhadaman",
-      "t": "moon",
-      "r": 1807,
-      "dv": 3343,
-      "e": "max",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Evadome",
-      "t": "moon",
-      "r": 1554,
-      "dv": 10146,
-      "e": "low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Glacier",
-      "t": "moon",
-      "r": 2460,
-      "dv": 12343,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 3141610386,
      "loot": "PSPEESEEPSPSP",
      "planets": 14,
@@ -1483,45 +1249,6 @@
       "r": 1563,
       "dv": 8030,
       "e": "max",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 3258305762,
-     "loot": "PSEPSESPEPES",
-     "planets": 13,
-     "bodies": 50,
-     "naquiumDv": 38910,
-     "z1": {
-      "n": "Tigris",
-      "t": "planet",
-      "r": 4690,
-      "dv": 4385,
-      "e": "high",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Mannanan",
-      "t": "moon",
-      "r": 1177,
-      "dv": 580,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Krubidium",
-      "t": "moon",
-      "r": 1767,
-      "dv": 1449,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Deadwood",
-      "t": "moon",
-      "r": 1691,
-      "dv": 1159,
-      "e": "none",
       "c": "vs"
      }
     },
@@ -1799,45 +1526,6 @@
      }
     },
     {
-     "seed": 2202210620,
-     "loot": "PESSEPEPESSP",
-     "planets": 13,
-     "bodies": 51,
-     "naquiumDv": 29875,
-     "z1": {
-      "n": "Dafdee",
-      "t": "moon",
-      "r": 1287,
-      "dv": 5349,
-      "e": "none",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Harmonia",
-      "t": "moon",
-      "r": 1262,
-      "dv": 2778,
-      "e": "high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Zirbs",
-      "t": "moon",
-      "r": 2530,
-      "dv": 4127,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Trelos",
-      "t": "planet",
-      "r": 9422,
-      "dv": 6078,
-      "e": "med",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 3459357402,
      "loot": "PSEPESEPSPES",
      "planets": 13,
@@ -1873,45 +1561,6 @@
       "r": 6481,
       "dv": 4680,
       "e": "very_high",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 1058455358,
-     "loot": "PSEESPPESPSE",
-     "planets": 13,
-     "bodies": 54,
-     "naquiumDv": 35216,
-     "z1": {
-      "n": "Mormo",
-      "t": "moon",
-      "r": 2559,
-      "dv": 3511,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Tentei",
-      "t": "moon",
-      "r": 1076,
-      "dv": 6293,
-      "e": "very_high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Deurus",
-      "t": "moon",
-      "r": 1836,
-      "dv": 4871,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Vanth",
-      "t": "moon",
-      "r": 1177,
-      "dv": 601,
-      "e": "none",
       "c": "vs"
      }
     },
@@ -1994,45 +1643,6 @@
      }
     },
     {
-     "seed": 996931028,
-     "loot": "PSPSEEEPPSES",
-     "planets": 13,
-     "bodies": 52,
-     "naquiumDv": 21963,
-     "z1": {
-      "n": "Lacero",
-      "t": "planet",
-      "r": 7445,
-      "dv": 6612,
-      "e": "none",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Wayland",
-      "t": "moon",
-      "r": 3489,
-      "dv": 5971,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Rupel",
-      "t": "planet",
-      "r": 8119,
-      "dv": 5103,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Mina",
-      "t": "moon",
-      "r": 1471,
-      "dv": 5329,
-      "e": "low",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 758111912,
      "loot": "PPSESEESPSPE",
      "planets": 13,
@@ -2102,11 +1712,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Sanctunimo",
+      "n": "Eostre",
       "t": "moon",
-      "r": 1177,
-      "dv": 942,
-      "e": "none",
+      "r": 3011,
+      "dv": 3405,
+      "e": "med",
       "c": "vs"
      }
     },
@@ -2219,11 +1829,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Gorgon",
-      "t": "moon",
-      "r": 1194,
-      "dv": 4081,
-      "e": "very_high",
+      "n": "Rivos",
+      "t": "planet",
+      "r": 5242,
+      "dv": 5940,
+      "e": "high",
       "c": "vs"
      }
     },
@@ -2336,10 +1946,10 @@
       "c": "be"
      },
      "vs": {
-      "n": "Bombato",
+      "n": "Shire",
       "t": "moon",
-      "r": 1425,
-      "dv": 4078,
+      "r": 3064,
+      "dv": 4369,
       "e": "med",
       "c": "vs"
      }
@@ -2380,45 +1990,6 @@
       "r": 2680,
       "dv": 3709,
       "e": "med",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2089791182,
-     "loot": "PPSEESPSEEPS",
-     "planets": 13,
-     "bodies": 54,
-     "naquiumDv": 21245,
-     "z1": {
-      "n": "Xynariz",
-      "t": "moon",
-      "r": 2327,
-      "dv": 4225,
-      "e": "max",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Titan",
-      "t": "planet",
-      "r": 9000,
-      "dv": 7019,
-      "e": "very_high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Juliette",
-      "t": "moon",
-      "r": 1538,
-      "dv": 5648,
-      "e": "very_low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Avez",
-      "t": "moon",
-      "r": 2356,
-      "dv": 5043,
-      "e": "low",
       "c": "vs"
      }
     },
@@ -2735,45 +2306,6 @@
      }
     },
     {
-     "seed": 4040222480,
-     "loot": "PSSEPEEPSESP",
-     "planets": 13,
-     "bodies": 56,
-     "naquiumDv": 72514,
-     "z1": {
-      "n": "Jibber",
-      "t": "moon",
-      "r": 1686,
-      "dv": 5917,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Degei",
-      "t": "moon",
-      "r": 1177,
-      "dv": 722,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Beylix",
-      "t": "planet",
-      "r": 5534,
-      "dv": 4698,
-      "e": "very_low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Greenleaf",
-      "t": "moon",
-      "r": 1855,
-      "dv": 7331,
-      "e": "high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 520706300,
      "loot": "PSESEPPESSPE",
      "planets": 13,
@@ -2852,45 +2384,6 @@
      }
     },
     {
-     "seed": 1567118618,
-     "loot": "PSESPEEPESPS",
-     "planets": 13,
-     "bodies": 52,
-     "naquiumDv": 21311,
-     "z1": {
-      "n": "Exallander",
-      "t": "moon",
-      "r": 2984,
-      "dv": 7215,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Morrigan",
-      "t": "moon",
-      "r": 1177,
-      "dv": 682,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Katalos",
-      "t": "moon",
-      "r": 1358,
-      "dv": 7558,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Capritos",
-      "t": "moon",
-      "r": 3284,
-      "dv": 6030,
-      "e": "max",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2623526846,
      "loot": "PPSESESEPSEP",
      "planets": 13,
@@ -2925,84 +2418,6 @@
       "t": "moon",
       "r": 1053,
       "dv": 4604,
-      "e": "low",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 1013155076,
-     "loot": "PSPESEPEEPSS",
-     "planets": 13,
-     "bodies": 50,
-     "naquiumDv": 53445,
-     "z1": {
-      "n": "Techne",
-      "t": "moon",
-      "r": 2085,
-      "dv": 5281,
-      "e": "max",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Anax",
-      "t": "moon",
-      "r": 1409,
-      "dv": 2906,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Noveria",
-      "t": "moon",
-      "r": 2623,
-      "dv": 7724,
-      "e": "high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Orbadon",
-      "t": "moon",
-      "r": 2193,
-      "dv": 4248,
-      "e": "very_low",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2709389362,
-     "loot": "PSEEPSEESPSP",
-     "planets": 13,
-     "bodies": 52,
-     "naquiumDv": 21094,
-     "z1": {
-      "n": "Thoon",
-      "t": "moon",
-      "r": 1321,
-      "dv": 6438,
-      "e": "med",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Weylop",
-      "t": "planet",
-      "r": 7200,
-      "dv": 5793,
-      "e": "med",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Lizava",
-      "t": "moon",
-      "r": 3258,
-      "dv": 4177,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Lendiana",
-      "t": "moon",
-      "r": 1855,
-      "dv": 7745,
       "e": "low",
       "c": "vs"
      }
@@ -3116,11 +2531,50 @@
       "c": "be"
      },
      "vs": {
-      "n": "Morus",
+      "n": "Aquila",
       "t": "moon",
-      "r": 1160,
-      "dv": 1329,
+      "r": 2215,
+      "dv": 4054,
+      "e": "very_high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1567118618,
+     "loot": "PSESPEEPESPS",
+     "planets": 13,
+     "bodies": 52,
+     "naquiumDv": 21311,
+     "z1": {
+      "n": "Exallander",
+      "t": "moon",
+      "r": 2984,
+      "dv": 7215,
+      "e": "very_low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Morrigan",
+      "t": "moon",
+      "r": 1177,
+      "dv": 682,
       "e": "none",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Katalos",
+      "t": "moon",
+      "r": 1358,
+      "dv": 7558,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Xiada",
+      "t": "moon",
+      "r": 1740,
+      "dv": 7959,
+      "e": "med",
       "c": "vs"
      }
     },
@@ -3242,45 +2696,6 @@
      }
     },
     {
-     "seed": 2093009372,
-     "loot": "PSPEESEPEPSS",
-     "planets": 13,
-     "bodies": 52,
-     "naquiumDv": 22380,
-     "z1": {
-      "n": "Rovecutio",
-      "t": "moon",
-      "r": 1295,
-      "dv": 7371,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Lozekam",
-      "t": "moon",
-      "r": 2441,
-      "dv": 8178,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Xandra",
-      "t": "moon",
-      "r": 2213,
-      "dv": 6931,
-      "e": "low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Orchid",
-      "t": "planet",
-      "r": 5252,
-      "dv": 6929,
-      "e": "max",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 4027732528,
      "loot": "PPESSEEESSPP",
      "planets": 13,
@@ -3359,45 +2774,6 @@
      }
     },
     {
-     "seed": 973896958,
-     "loot": "PESPESPESPSE",
-     "planets": 13,
-     "bodies": 53,
-     "naquiumDv": 59203,
-     "z1": {
-      "n": "Matyus",
-      "t": "moon",
-      "r": 2937,
-      "dv": 5253,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Phanto",
-      "t": "moon",
-      "r": 1130,
-      "dv": 8309,
-      "e": "high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Perodome",
-      "t": "planet",
-      "r": 4119,
-      "dv": 7411,
-      "e": "very_low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Greyhaven",
-      "t": "moon",
-      "r": 1177,
-      "dv": 793,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 1622222268,
      "loot": "PSSEPEESPEPS",
      "planets": 13,
@@ -3433,84 +2809,6 @@
       "r": 2638,
       "dv": 4247,
       "e": "med",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 3741245930,
-     "loot": "PESPSEEEPSSP",
-     "planets": 13,
-     "bodies": 50,
-     "naquiumDv": 32443,
-     "z1": {
-      "n": "Benthai",
-      "t": "moon",
-      "r": 1898,
-      "dv": 8359,
-      "e": "very_low",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Trostaurus",
-      "t": "moon",
-      "r": 1628,
-      "dv": 8102,
-      "e": "low",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Algea",
-      "t": "moon",
-      "r": 1921,
-      "dv": 1343,
-      "e": "very_low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Curaga",
-      "t": "moon",
-      "r": 1177,
-      "dv": 671,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2680148666,
-     "loot": "PEPSESSPEPSE",
-     "planets": 13,
-     "bodies": 49,
-     "naquiumDv": 41451,
-     "z1": {
-      "n": "Rinoto",
-      "t": "moon",
-      "r": 1101,
-      "dv": 2958,
-      "e": "high",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Eshu",
-      "t": "moon",
-      "r": 1177,
-      "dv": 615,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Orpheus",
-      "t": "moon",
-      "r": 1810,
-      "dv": 8370,
-      "e": "med",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Rivos",
-      "t": "planet",
-      "r": 4833,
-      "dv": 7608,
-      "e": "very_high",
       "c": "vs"
      }
     },
@@ -4022,84 +3320,6 @@
      }
     },
     {
-     "seed": 1861929820,
-     "loot": "PSEPSEESPSPE",
-     "planets": 13,
-     "bodies": 54,
-     "naquiumDv": 75106,
-     "z1": {
-      "n": "Jakiro",
-      "t": "moon",
-      "r": 1877,
-      "dv": 4774,
-      "e": "very_high",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Snezon",
-      "t": "moon",
-      "r": 3335,
-      "dv": 8865,
-      "e": "none",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Lizava",
-      "t": "planet",
-      "r": 4726,
-      "dv": 4463,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Aciszar",
-      "t": "moon",
-      "r": 1530,
-      "dv": 3686,
-      "e": "very_high",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 3564385426,
-     "loot": "PPEESSSPEPSE",
-     "planets": 13,
-     "bodies": 57,
-     "naquiumDv": 23090,
-     "z1": {
-      "n": "Cinza",
-      "t": "moon",
-      "r": 1274,
-      "dv": 8872,
-      "e": "none",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Orphne",
-      "t": "moon",
-      "r": 3092,
-      "dv": 1744,
-      "e": "very_high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Sturata",
-      "t": "moon",
-      "r": 1009,
-      "dv": 7311,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Indigo",
-      "t": "moon",
-      "r": 2473,
-      "dv": 5417,
-      "e": "max",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 1001688088,
      "loot": "PSESPEESESPP",
      "planets": 13,
@@ -4256,45 +3476,6 @@
      }
     },
     {
-     "seed": 3676750684,
-     "loot": "PSEPESSEPEPS",
-     "planets": 13,
-     "bodies": 52,
-     "naquiumDv": 91939,
-     "z1": {
-      "n": "Seehusen",
-      "t": "moon",
-      "r": 1420,
-      "dv": 6274,
-      "e": "none",
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Nissaria",
-      "t": "planet",
-      "r": 7570,
-      "dv": 8975,
-      "e": "very_low",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Cybros",
-      "t": "moon",
-      "r": 3242,
-      "dv": 6920,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Veden",
-      "t": "planet",
-      "r": 9922,
-      "dv": 7342,
-      "e": "very_high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 882642344,
      "loot": "PPEESSEEPSPS",
      "planets": 13,
@@ -4330,6 +3511,786 @@
       "r": 3033,
       "dv": 6506,
       "e": "high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1334333000,
+     "loot": "PSESEPPESEPS",
+     "planets": 13,
+     "bodies": 56,
+     "naquiumDv": 43615,
+     "z1": {
+      "n": "Exallander",
+      "t": "moon",
+      "r": 2716,
+      "dv": 1244,
+      "e": "very_low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Zirbs",
+      "t": "planet",
+      "r": 4455,
+      "dv": 9062,
+      "e": "med",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Hexen",
+      "t": "planet",
+      "r": 8930,
+      "dv": 6470,
+      "e": "very_high",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Morityema",
+      "t": "moon",
+      "r": 3061,
+      "dv": 4028,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 3408778726,
+     "loot": "PESPESEPSESP",
+     "planets": 13,
+     "bodies": 52,
+     "naquiumDv": 30757,
+     "z1": {
+      "n": "Snek",
+      "t": "planet",
+      "r": 9000,
+      "dv": 7336,
+      "e": "max",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Luxitania",
+      "t": "moon",
+      "r": 2530,
+      "dv": 6016,
+      "e": "low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Jakiro",
+      "t": "moon",
+      "r": 2437,
+      "dv": 9108,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Algea",
+      "t": "moon",
+      "r": 2686,
+      "dv": 8131,
+      "e": "low",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 195740116,
+     "loot": "PPESSEPSESEP",
+     "planets": 13,
+     "bodies": 56,
+     "naquiumDv": 21836,
+     "z1": {
+      "n": "Tinfaya",
+      "t": "planet",
+      "r": 8504,
+      "dv": 6730,
+      "e": "none",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Adikia",
+      "t": "moon",
+      "r": 2652,
+      "dv": 9111,
+      "e": "high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Lotuslana",
+      "t": "moon",
+      "r": 4009,
+      "dv": 5247,
+      "e": "low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Chiron",
+      "t": "planet",
+      "r": 8649,
+      "dv": 6261,
+      "e": "max",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1272225284,
+     "loot": "PEPESSPSESEP",
+     "planets": 13,
+     "bodies": 56,
+     "naquiumDv": 47208,
+     "z1": {
+      "n": "Alke",
+      "t": "planet",
+      "r": 7554,
+      "dv": 9131,
+      "e": "very_low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Bellerophon",
+      "t": "planet",
+      "r": 4451,
+      "dv": 4582,
+      "e": "low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Wyvern",
+      "t": "moon",
+      "r": 2506,
+      "dv": 5175,
+      "e": "very_low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Jeroen",
+      "t": "moon",
+      "r": 1702,
+      "dv": 6129,
+      "e": "very_high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 3527225162,
+     "loot": "PEPSSEPPSEES",
+     "planets": 13,
+     "bodies": 53,
+     "naquiumDv": 24870,
+     "z1": {
+      "n": "Naden",
+      "t": "moon",
+      "r": 2113,
+      "dv": 6678,
+      "e": "very_high",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Mors",
+      "t": "moon",
+      "r": 1177,
+      "dv": 547,
+      "e": "none",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Magaera",
+      "t": "planet",
+      "r": 4128,
+      "dv": 9134,
+      "e": "low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Noventede",
+      "t": "moon",
+      "r": 2597,
+      "dv": 7028,
+      "e": "very_high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1169854494,
+     "loot": "PSPESEPSSEEP",
+     "planets": 13,
+     "bodies": 50,
+     "naquiumDv": 34852,
+     "z1": {
+      "n": "Melkor",
+      "t": "moon",
+      "r": 1587,
+      "dv": 6693,
+      "e": "low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Faustus",
+      "t": "moon",
+      "r": 1085,
+      "dv": 9167,
+      "e": "very_low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Amadeo",
+      "t": "planet",
+      "r": 4327,
+      "dv": 9002,
+      "e": "med",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Fern",
+      "t": "moon",
+      "r": 3751,
+      "dv": 4293,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2895219776,
+     "loot": "PESPSESSPEPE",
+     "planets": 13,
+     "bodies": 52,
+     "naquiumDv": 35961,
+     "z1": {
+      "n": "Jibber",
+      "t": "moon",
+      "r": 1373,
+      "dv": 9179,
+      "e": "very_low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Hypnos",
+      "t": "moon",
+      "r": 2688,
+      "dv": 7923,
+      "e": "none",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Arae",
+      "t": "moon",
+      "r": 1272,
+      "dv": 7546,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Rose",
+      "t": "moon",
+      "r": 3165,
+      "dv": 4241,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2635478686,
+     "loot": "PSEEPSEPPSSE",
+     "planets": 13,
+     "bodies": 51,
+     "naquiumDv": 21572,
+     "z1": {
+      "n": "Jakiro",
+      "t": "moon",
+      "r": 2602,
+      "dv": 1015,
+      "e": "none",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Oeris",
+      "t": "moon",
+      "r": 2894,
+      "dv": 1692,
+      "e": "very_low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Vioress",
+      "t": "moon",
+      "r": 1288,
+      "dv": 9217,
+      "e": "high",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Akerty",
+      "t": "moon",
+      "r": 1647,
+      "dv": 6131,
+      "e": "max",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 800281228,
+     "loot": "PPSESEESPSEP",
+     "planets": 13,
+     "bodies": 61,
+     "naquiumDv": 76904,
+     "z1": {
+      "n": "Plato",
+      "t": "moon",
+      "r": 3094,
+      "dv": 9235,
+      "e": "max",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Jinxjazz",
+      "t": "planet",
+      "r": 9069,
+      "dv": 4951,
+      "e": "very_low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Cybros",
+      "t": "moon",
+      "r": 3510,
+      "dv": 7492,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Quillion",
+      "t": "moon",
+      "r": 1578,
+      "dv": 6689,
+      "e": "max",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2709389362,
+     "loot": "PSEEPSEESPSP",
+     "planets": 13,
+     "bodies": 52,
+     "naquiumDv": 21094,
+     "z1": {
+      "n": "Thoon",
+      "t": "moon",
+      "r": 1321,
+      "dv": 6438,
+      "e": "med",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Weylop",
+      "t": "planet",
+      "r": 7200,
+      "dv": 5793,
+      "e": "med",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Lizava",
+      "t": "moon",
+      "r": 3258,
+      "dv": 4177,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Aeolus",
+      "t": "moon",
+      "r": 1975,
+      "dv": 9272,
+      "e": "max",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 4140304094,
+     "loot": "PSESEPSPPEES",
+     "planets": 13,
+     "bodies": 51,
+     "naquiumDv": 32619,
+     "z1": {
+      "n": "Peitho",
+      "t": "moon",
+      "r": 1199,
+      "dv": 5622,
+      "e": "none",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Cichol",
+      "t": "moon",
+      "r": 1177,
+      "dv": 642,
+      "e": "none",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Evadome",
+      "t": "planet",
+      "r": 6942,
+      "dv": 9273,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Mossgarden",
+      "t": "moon",
+      "r": 3243,
+      "dv": 4111,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 3555538724,
+     "loot": "PPESESPEPSES",
+     "planets": 13,
+     "bodies": 55,
+     "naquiumDv": 21531,
+     "z1": {
+      "n": "Tigris",
+      "t": "planet",
+      "r": 4790,
+      "dv": 7300,
+      "e": "none",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Selemaenae",
+      "t": "planet",
+      "r": 6496,
+      "dv": 9375,
+      "e": "high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Erinyes",
+      "t": "moon",
+      "r": 4161,
+      "dv": 6011,
+      "e": "high",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Eostre",
+      "t": "moon",
+      "r": 3004,
+      "dv": 4116,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1576854704,
+     "loot": "PSEEPSSEPESP",
+     "planets": 13,
+     "bodies": 51,
+     "naquiumDv": 31328,
+     "z1": {
+      "n": "Hyrean",
+      "t": "moon",
+      "r": 1024,
+      "dv": 9386,
+      "e": "high",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Avernus",
+      "t": "moon",
+      "r": 3161,
+      "dv": 6607,
+      "e": "max",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Cybros",
+      "t": "planet",
+      "r": 6077,
+      "dv": 9302,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Eostre",
+      "t": "moon",
+      "r": 3818,
+      "dv": 3757,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 711263526,
+     "loot": "PSEESPPSEPES",
+     "planets": 13,
+     "bodies": 49,
+     "naquiumDv": 35816,
+     "z1": {
+      "n": "Lameuffen",
+      "t": "moon",
+      "r": 2097,
+      "dv": 9394,
+      "e": "none",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Alfonso",
+      "t": "planet",
+      "r": 7551,
+      "dv": 6831,
+      "e": "low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Spiriso",
+      "t": "moon",
+      "r": 2730,
+      "dv": 7880,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Antsoutwelt",
+      "t": "planet",
+      "r": 9700,
+      "dv": 7729,
+      "e": "max",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2257160306,
+     "loot": "PSSPEESEPESP",
+     "planets": 13,
+     "bodies": 50,
+     "naquiumDv": 35368,
+     "z1": {
+      "n": "Selemaenae",
+      "t": "moon",
+      "r": 1098,
+      "dv": 1155,
+      "e": "none",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Greenleaf",
+      "t": "moon",
+      "r": 2650,
+      "dv": 9406,
+      "e": "none",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Aciszar",
+      "t": "planet",
+      "r": 6476,
+      "dv": 5890,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Cootiepuss",
+      "t": "moon",
+      "r": 1200,
+      "dv": 7540,
+      "e": "very_high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2160074304,
+     "loot": "PESSEPPEEPSS",
+     "planets": 13,
+     "bodies": 56,
+     "naquiumDv": 54833,
+     "z1": {
+      "n": "Oeris",
+      "t": "planet",
+      "r": 4608,
+      "dv": 9407,
+      "e": "max",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Aidos",
+      "t": "moon",
+      "r": 1350,
+      "dv": 5044,
+      "e": "high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Beaumont",
+      "t": "planet",
+      "r": 5154,
+      "dv": 7029,
+      "e": "high",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Albion",
+      "t": "moon",
+      "r": 1066,
+      "dv": 5352,
+      "e": "very_high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2734701628,
+     "loot": "PSESPEESPPES",
+     "planets": 13,
+     "bodies": 50,
+     "naquiumDv": 41837,
+     "z1": {
+      "n": "Juliette",
+      "t": "planet",
+      "r": 4047,
+      "dv": 6244,
+      "e": "max",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Avez",
+      "t": "moon",
+      "r": 2181,
+      "dv": 9416,
+      "e": "none",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Elpis",
+      "t": "planet",
+      "r": 4808,
+      "dv": 7090,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Koolimon",
+      "t": "moon",
+      "r": 1189,
+      "dv": 8341,
+      "e": "very_high",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1605033874,
+     "loot": "PSPSEESPESPE",
+     "planets": 13,
+     "bodies": 50,
+     "naquiumDv": 41810,
+     "z1": {
+      "n": "Boerdig",
+      "t": "planet",
+      "r": 7382,
+      "dv": 9592,
+      "e": "low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Aizen",
+      "t": "moon",
+      "r": 1169,
+      "dv": 5494,
+      "e": "high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Acisrind",
+      "t": "moon",
+      "r": 2349,
+      "dv": 1776,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Bigrid",
+      "t": "moon",
+      "r": 2441,
+      "dv": 4392,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2272898978,
+     "loot": "PESPESPESSEP",
+     "planets": 13,
+     "bodies": 49,
+     "naquiumDv": 45770,
+     "z1": {
+      "n": "Crixalis",
+      "t": "moon",
+      "r": 2187,
+      "dv": 9603,
+      "e": "med",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Grilla",
+      "t": "moon",
+      "r": 1268,
+      "dv": 4656,
+      "e": "max",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Shashi",
+      "t": "planet",
+      "r": 4000,
+      "dv": 6780,
+      "e": "very_low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Morityema",
+      "t": "moon",
+      "r": 2650,
+      "dv": 3324,
+      "e": "med",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 3744476864,
+     "loot": "PESESPESEPSP",
+     "planets": 13,
+     "bodies": 50,
+     "naquiumDv": 21408,
+     "z1": {
+      "n": "Melkor",
+      "t": "moon",
+      "r": 1187,
+      "dv": 9605,
+      "e": "low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Tycho",
+      "t": "moon",
+      "r": 2313,
+      "dv": 6423,
+      "e": "very_high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Vares",
+      "t": "moon",
+      "r": 2709,
+      "dv": 1727,
+      "e": "very_low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Rose",
+      "t": "moon",
+      "r": 3705,
+      "dv": 4423,
+      "e": "med",
       "c": "vs"
      }
     },
@@ -4442,11 +4403,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Vyse",
+      "n": "Buttercup",
       "t": "moon",
-      "r": 1236,
-      "dv": 2600,
-      "e": "max",
+      "r": 2455,
+      "dv": 3504,
+      "e": "med",
       "c": "vs"
      }
     },
@@ -4564,45 +4525,6 @@
       "r": 3765,
       "dv": 3604,
       "e": "med",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 1638003014,
-     "loot": "PSESEPEEPPS",
-     "planets": 12,
-     "bodies": 50,
-     "naquiumDv": 31677,
-     "z1": {
-      "n": "Jakiro",
-      "t": "moon",
-      "r": 1514,
-      "dv": 7262,
-      "e": "very_low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Anvil",
-      "t": "moon",
-      "r": 2564,
-      "dv": 5326,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Lethe",
-      "t": "planet",
-      "r": 5773,
-      "dv": 8151,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Zomble",
-      "t": "moon",
-      "r": 1894,
-      "dv": 1103,
-      "e": "very_low",
       "c": "vs"
      }
     },
@@ -4997,45 +4919,6 @@
      }
     },
     {
-     "seed": 3862942110,
-     "loot": "PSSPEEPSSP",
-     "planets": 11,
-     "bodies": 50,
-     "naquiumDv": 100316,
-     "z1": {
-      "n": "Boerdig",
-      "t": "moon",
-      "r": 1017,
-      "dv": 3175,
-      "e": "low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Goibniu",
-      "t": "moon",
-      "r": 3271,
-      "dv": 5574,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Benthai",
-      "t": "moon",
-      "r": 2648,
-      "dv": 5171,
-      "e": "very_high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Azure",
-      "t": "moon",
-      "r": 714,
-      "dv": 1094,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2757422398,
      "loot": "PEEPSSEPSP",
      "planets": 11,
@@ -5300,11 +5183,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Hermes",
+      "n": "Nexus",
       "t": "moon",
-      "r": 1447,
-      "dv": 4012,
-      "e": "very_low",
+      "r": 2417,
+      "dv": 5693,
+      "e": "high",
       "c": "vs"
      }
     },
@@ -5344,45 +5227,6 @@
       "r": 2442,
       "dv": 4115,
       "e": "med",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 3113754138,
-     "loot": "PEESSPEPEP",
-     "planets": 11,
-     "bodies": 54,
-     "naquiumDv": 33180,
-     "z1": {
-      "n": "Willownezz",
-      "t": "moon",
-      "r": 1011,
-      "dv": 5124,
-      "e": "very_low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Hermes",
-      "t": "moon",
-      "r": 4243,
-      "dv": 4810,
-      "e": "very_high",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Cybros",
-      "t": "moon",
-      "r": 1475,
-      "dv": 6647,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Indarl",
-      "t": "moon",
-      "r": 1498,
-      "dv": 7272,
-      "e": "max",
       "c": "vs"
      }
     },
@@ -5465,45 +5309,6 @@
      }
     },
     {
-     "seed": 95269744,
-     "loot": "PSEPSESSPP",
-     "planets": 11,
-     "bodies": 49,
-     "naquiumDv": 28739,
-     "z1": {
-      "n": "Willownezz",
-      "t": "moon",
-      "r": 1398,
-      "dv": 7790,
-      "e": "very_low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Kitsune",
-      "t": "moon",
-      "r": 1053,
-      "dv": 923,
-      "e": "none",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Kaliphos",
-      "t": "moon",
-      "r": 1221,
-      "dv": 5772,
-      "e": "max",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Morrigan",
-      "t": "moon",
-      "r": 1177,
-      "dv": 615,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2445863176,
      "loot": "PSESEPESPP",
      "planets": 11,
@@ -5538,45 +5343,6 @@
       "t": "moon",
       "r": 2404,
       "dv": 4335,
-      "e": "med",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 1801407816,
-     "loot": "PSSEPEPEPE",
-     "planets": 11,
-     "bodies": 55,
-     "naquiumDv": 49308,
-     "z1": {
-      "n": "Lacero",
-      "t": "planet",
-      "r": 5184,
-      "dv": 6669,
-      "e": "none",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Wayland",
-      "t": "moon",
-      "r": 2487,
-      "dv": 5452,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Limos",
-      "t": "moon",
-      "r": 1341,
-      "dv": 8184,
-      "e": "very_high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Aurelios",
-      "t": "moon",
-      "r": 819,
-      "dv": 7542,
       "e": "med",
       "c": "vs"
      }
@@ -5855,6 +5621,45 @@
      }
     },
     {
+     "seed": 95269744,
+     "loot": "PSEPSESSPP",
+     "planets": 11,
+     "bodies": 49,
+     "naquiumDv": 28739,
+     "z1": {
+      "n": "Willownezz",
+      "t": "moon",
+      "r": 1398,
+      "dv": 7790,
+      "e": "very_low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Kitsune",
+      "t": "moon",
+      "r": 1053,
+      "dv": 923,
+      "e": "none",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Kaliphos",
+      "t": "moon",
+      "r": 1221,
+      "dv": 5772,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Ettenor",
+      "t": "planet",
+      "r": 4353,
+      "dv": 9449,
+      "e": "high",
+      "c": "vs"
+     }
+    },
+    {
      "seed": 2612777772,
      "loot": "PEESPSSPPE",
      "planets": 11,
@@ -6011,45 +5816,6 @@
      }
     },
     {
-     "seed": 3785543546,
-     "loot": "PESSPEPEPE",
-     "planets": 11,
-     "bodies": 49,
-     "naquiumDv": 34128,
-     "z1": {
-      "n": "Lacero",
-      "t": "moon",
-      "r": 1849,
-      "dv": 9467,
-      "e": "none",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Hadur",
-      "t": "moon",
-      "r": 3642,
-      "dv": 6163,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Arae",
-      "t": "moon",
-      "r": 777,
-      "dv": 9736,
-      "e": "very_low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Slithice",
-      "t": "moon",
-      "r": 3351,
-      "dv": 5423,
-      "e": "high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2203869988,
      "loot": "PSEESPESPP",
      "planets": 11,
@@ -6158,11 +5924,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Geryon",
-      "t": "planet",
-      "r": 4278,
-      "dv": 7080,
-      "e": "med",
+      "n": "Cootiepuss",
+      "t": "moon",
+      "r": 3627,
+      "dv": 7571,
+      "e": "very_high",
       "c": "vs"
      }
     },
@@ -6314,89 +6080,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Meditato",
+      "n": "Fern",
       "t": "moon",
-      "r": 1177,
-      "dv": 695,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2327417480,
-     "loot": "PEEPSSSPEP",
-     "planets": 11,
-     "bodies": 49,
-     "naquiumDv": 56402,
-     "z1": {
-      "n": "Willownezz",
-      "t": "moon",
-      "r": 1186,
-      "dv": 9435,
-      "e": "very_low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Anvil",
-      "t": "moon",
-      "r": 2472,
-      "dv": 4823,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Arkazious",
-      "t": "moon",
-      "r": 2469,
-      "dv": 8467,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Orchid",
-      "t": "planet",
-      "r": 4004,
-      "dv": 11064,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 1184621744,
-     "loot": "PEPSSEPPSS",
-     "planets": 11,
-     "bodies": 58,
-     "naquiumDv": 54289,
-     "z1": {
-      "n": "Jakiro",
-      "t": "moon",
-      "r": 1776,
-      "dv": 11175,
+      "r": 3348,
+      "dv": 3660,
       "e": "med",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Lugh",
-      "t": "moon",
-      "r": 3800,
-      "dv": 5789,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Lamia",
-      "t": "planet",
-      "r": 4121,
-      "dv": 4924,
-      "e": "med",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Mors",
-      "t": "moon",
-      "r": 1177,
-      "dv": 761,
-      "e": "none",
       "c": "vs"
      }
     },
@@ -6436,45 +6124,6 @@
       "r": 6400,
       "dv": 11391,
       "e": "low",
-      "c": "vs"
-     }
-    },
-    {
-     "seed": 2182374878,
-     "loot": "PESESPESPP",
-     "planets": 11,
-     "bodies": 56,
-     "naquiumDv": 37864,
-     "z1": {
-      "n": "Plenai",
-      "t": "planet",
-      "r": 9889,
-      "dv": 11871,
-      "e": "low",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Ptah",
-      "t": "moon",
-      "r": 2977,
-      "dv": 5901,
-      "e": "low",
-      "c": "ir"
-     },
-     "be": {
-      "n": "Cybros",
-      "t": "moon",
-      "r": 3221,
-      "dv": 1082,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Hyrean",
-      "t": "moon",
-      "r": 1313,
-      "dv": 6301,
-      "e": "none",
       "c": "vs"
      }
     },
@@ -6668,40 +6317,6 @@
      }
     },
     {
-     "seed": 1381234536,
-     "loot": "PSEPSEPPESSEP",
-     "planets": 14,
-     "bodies": 51,
-     "naquiumDv": 88208,
-     "z1": {
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Mireska",
-      "t": "moon",
-      "r": 698,
-      "dv": 3958,
-      "e": "high",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Vioress",
-      "t": "moon",
-      "r": 4625,
-      "dv": 4812,
-      "e": "low",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Agon",
-      "t": "moon",
-      "r": 4125,
-      "dv": 1532,
-      "e": "very_high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 982470360,
      "loot": "PESSEPPSPSEEP",
      "planets": 14,
@@ -6804,40 +6419,6 @@
      }
     },
     {
-     "seed": 2849443878,
-     "loot": "PEESPSSEESPPP",
-     "planets": 14,
-     "bodies": 61,
-     "naquiumDv": 31958,
-     "z1": {
-      "n": "Termina",
-      "t": "moon",
-      "r": 2501,
-      "dv": 3328,
-      "e": "high",
-      "c": "vi"
-     },
-     "z2": {
-      "c": "ch"
-     },
-     "be": {
-      "n": "Nexus",
-      "t": "planet",
-      "r": 4169,
-      "dv": 5779,
-      "e": "high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Lyssa",
-      "t": "moon",
-      "r": 2335,
-      "dv": 5526,
-      "e": "high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2631251398,
      "loot": "PSPESESPEESPP",
      "planets": 14,
@@ -6858,11 +6439,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Claymore",
+      "n": "Eostre",
       "t": "moon",
-      "r": 1075,
-      "dv": 3749,
-      "e": "max",
+      "r": 3472,
+      "dv": 4461,
+      "e": "med",
       "c": "vs"
      }
     },
@@ -6901,6 +6482,35 @@
      }
     },
     {
+     "seed": 593505560,
+     "loot": "PPSEESESEPSPP",
+     "planets": 14,
+     "bodies": 66,
+     "naquiumDv": 22200,
+     "z1": {
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Juno",
+      "t": "moon",
+      "r": 2279,
+      "dv": 1585,
+      "e": "high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Angelos",
+      "t": "moon",
+      "r": 3178,
+      "dv": 6167,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
      "seed": 1239624358,
      "loot": "PSESEPSPEESPP",
      "planets": 14,
@@ -6923,6 +6533,30 @@
       "r": 8232,
       "dv": 4505,
       "e": "med",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1947182514,
+     "loot": "PSPEESPSPEESP",
+     "planets": 14,
+     "bodies": 51,
+     "naquiumDv": 29810,
+     "z1": {
+      "c": "vi"
+     },
+     "z2": {
+      "c": "ch"
+     },
+     "be": {
+      "n": "Albion",
+      "t": "moon",
+      "r": 740,
+      "dv": 6209,
+      "e": "very_high",
       "c": "be"
      },
      "vs": {
@@ -7022,35 +6656,6 @@
      }
     },
     {
-     "seed": 1035161280,
-     "loot": "PPSSEEEESPPSP",
-     "planets": 14,
-     "bodies": 60,
-     "naquiumDv": 34899,
-     "z1": {
-      "c": "vi"
-     },
-     "z2": {
-      "c": "ch"
-     },
-     "be": {
-      "n": "Aizen",
-      "t": "planet",
-      "r": 6512,
-      "dv": 6712,
-      "e": "none",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Greyhaven",
-      "t": "moon",
-      "r": 1177,
-      "dv": 509,
-      "e": "none",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 380728390,
      "loot": "PPEESSEPPSESP",
      "planets": 14,
@@ -7114,6 +6719,40 @@
      }
     },
     {
+     "seed": 1381234536,
+     "loot": "PSEPSEPPESSEP",
+     "planets": 14,
+     "bodies": 51,
+     "naquiumDv": 88208,
+     "z1": {
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Mireska",
+      "t": "moon",
+      "r": 698,
+      "dv": 3958,
+      "e": "high",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Vioress",
+      "t": "moon",
+      "r": 4625,
+      "dv": 4812,
+      "e": "low",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Neenuvar",
+      "t": "planet",
+      "r": 6629,
+      "dv": 6999,
+      "e": "high",
+      "c": "vs"
+     }
+    },
+    {
      "seed": 669050728,
      "loot": "PEPSSEPPESESP",
      "planets": 14,
@@ -7139,11 +6778,11 @@
       "c": "be"
      },
      "vs": {
-      "n": "Feist",
+      "n": "Tulip",
       "t": "moon",
-      "r": 1373,
-      "dv": 1291,
-      "e": "max",
+      "r": 2653,
+      "dv": 3765,
+      "e": "med",
       "c": "vs"
      }
     },
@@ -7240,6 +6879,35 @@
      }
     },
     {
+     "seed": 2800495118,
+     "loot": "PSPSEEPSEPSEP",
+     "planets": 14,
+     "bodies": 54,
+     "naquiumDv": 31458,
+     "z1": {
+      "c": "vi"
+     },
+     "z2": {
+      "c": "ch"
+     },
+     "be": {
+      "n": "Robbebol",
+      "t": "moon",
+      "r": 2337,
+      "dv": 7614,
+      "e": "med",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Sage",
+      "t": "moon",
+      "r": 933,
+      "dv": 5480,
+      "e": "low",
+      "c": "vs"
+     }
+    },
+    {
      "seed": 1306356724,
      "loot": "PSEPSESEEPSPP",
      "planets": 14,
@@ -7298,11 +6966,11 @@
      }
     },
     {
-     "seed": 2800495118,
-     "loot": "PSPSEEPSEPSEP",
+     "seed": 1035161280,
+     "loot": "PPSSEEEESPPSP",
      "planets": 14,
-     "bodies": 54,
-     "naquiumDv": 31458,
+     "bodies": 60,
+     "naquiumDv": 34899,
      "z1": {
       "c": "vi"
      },
@@ -7310,53 +6978,53 @@
       "c": "ch"
      },
      "be": {
-      "n": "Robbebol",
-      "t": "moon",
-      "r": 2337,
-      "dv": 7614,
-      "e": "med",
+      "n": "Aizen",
+      "t": "planet",
+      "r": 6512,
+      "dv": 6712,
+      "e": "none",
       "c": "be"
      },
      "vs": {
-      "n": "Lendiana",
+      "n": "Andragora",
       "t": "moon",
-      "r": 1381,
-      "dv": 7716,
-      "e": "low",
+      "r": 1210,
+      "dv": 8015,
+      "e": "high",
       "c": "vs"
      }
     },
     {
-     "seed": 593505560,
-     "loot": "PPSEESESEPSPP",
+     "seed": 1138870420,
+     "loot": "PESSEPSPEPSEP",
      "planets": 14,
-     "bodies": 66,
-     "naquiumDv": 22200,
+     "bodies": 55,
+     "naquiumDv": 21900,
      "z1": {
+      "n": "Semiele",
+      "t": "moon",
+      "r": 725,
+      "dv": 8085,
+      "e": "high",
       "c": "vi"
      },
      "z2": {
-      "n": "Juno",
+      "n": "Tarn",
       "t": "moon",
-      "r": 2279,
-      "dv": 1585,
-      "e": "high",
+      "r": 1275,
+      "dv": 5829,
+      "e": "low",
       "c": "ch"
      },
      "be": {
-      "n": "Angelos",
+      "n": "Infamani",
       "t": "moon",
-      "r": 3178,
-      "dv": 6167,
+      "r": 1281,
+      "dv": 6214,
       "e": "max",
       "c": "be"
      },
      "vs": {
-      "n": "Joenus",
-      "t": "planet",
-      "r": 7124,
-      "dv": 8261,
-      "e": "very_high",
       "c": "vs"
      }
     },
@@ -7429,6 +7097,40 @@
      }
     },
     {
+     "seed": 2849443878,
+     "loot": "PEESPSSEESPPP",
+     "planets": 14,
+     "bodies": 61,
+     "naquiumDv": 31958,
+     "z1": {
+      "n": "Termina",
+      "t": "moon",
+      "r": 2501,
+      "dv": 3328,
+      "e": "high",
+      "c": "vi"
+     },
+     "z2": {
+      "c": "ch"
+     },
+     "be": {
+      "n": "Nexus",
+      "t": "planet",
+      "r": 4169,
+      "dv": 5779,
+      "e": "high",
+      "c": "be"
+     },
+     "vs": {
+      "n": "Beaumont",
+      "t": "moon",
+      "r": 843,
+      "dv": 8647,
+      "e": "max",
+      "c": "vs"
+     }
+    },
+    {
      "seed": 927154654,
      "loot": "PESEPSSEPESPP",
      "planets": 14,
@@ -7497,31 +7199,31 @@
      }
     },
     {
-     "seed": 1947182514,
-     "loot": "PSPEESPSPEESP",
+     "seed": 1934760066,
+     "loot": "PEPSSEPSPSEEP",
      "planets": 14,
-     "bodies": 51,
-     "naquiumDv": 29810,
+     "bodies": 61,
+     "naquiumDv": 60746,
      "z1": {
       "c": "vi"
      },
      "z2": {
+      "n": "Acisrind",
+      "t": "moon",
+      "r": 3467,
+      "dv": 9104,
+      "e": "max",
       "c": "ch"
      },
      "be": {
-      "n": "Albion",
+      "n": "Lath",
       "t": "moon",
-      "r": 740,
-      "dv": 6209,
+      "r": 2016,
+      "dv": 1458,
       "e": "very_high",
       "c": "be"
      },
      "vs": {
-      "n": "Anathema",
-      "t": "planet",
-      "r": 6947,
-      "dv": 9507,
-      "e": "low",
       "c": "vs"
      }
     },
@@ -7604,11 +7306,6 @@
       "c": "be"
      },
      "vs": {
-      "n": "Slithice",
-      "t": "moon",
-      "r": 1872,
-      "dv": 3267,
-      "e": "very_high",
       "c": "vs"
      }
     },
@@ -7647,6 +7344,69 @@
      }
     },
     {
+     "seed": 3241272720,
+     "loot": "PEPESSSEEPPSP",
+     "planets": 14,
+     "bodies": 57,
+     "naquiumDv": 35781,
+     "z1": {
+      "n": "Vioress",
+      "t": "planet",
+      "r": 4290,
+      "dv": 10711,
+      "e": "very_low",
+      "c": "vi"
+     },
+     "z2": {
+      "c": "ch"
+     },
+     "be": {
+      "n": "Exavier",
+      "t": "moon",
+      "r": 3999,
+      "dv": 4716,
+      "e": "med",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 4242141340,
+     "loot": "PESPESSPEEPSP",
+     "planets": 14,
+     "bodies": 52,
+     "naquiumDv": 27641,
+     "z1": {
+      "n": "Willownezz",
+      "t": "planet",
+      "r": 4051,
+      "dv": 5392,
+      "e": "very_low",
+      "c": "vi"
+     },
+     "z2": {
+      "n": "Berky",
+      "t": "planet",
+      "r": 8328,
+      "dv": 10883,
+      "e": "low",
+      "c": "ch"
+     },
+     "be": {
+      "n": "Ajax",
+      "t": "moon",
+      "r": 471,
+      "dv": 4189,
+      "e": "high",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
      "seed": 2918086816,
      "loot": "PESSPEEPPESSP",
      "planets": 14,
@@ -7672,11 +7432,6 @@
       "c": "be"
      },
      "vs": {
-      "n": "Aesseilia",
-      "t": "moon",
-      "r": 1177,
-      "dv": 600,
-      "e": "none",
       "c": "vs"
      }
     },
@@ -7710,36 +7465,36 @@
      }
     },
     {
-     "seed": 3241272720,
-     "loot": "PEPESSSEEPPSP",
+     "seed": 2476420384,
+     "loot": "PSSEEPEPPSSEP",
      "planets": 14,
-     "bodies": 57,
-     "naquiumDv": 35781,
+     "bodies": 52,
+     "naquiumDv": 36510,
      "z1": {
-      "n": "Vioress",
+      "n": "Snek",
       "t": "planet",
-      "r": 4290,
-      "dv": 10711,
-      "e": "very_low",
+      "r": 9000,
+      "dv": 9076,
+      "e": "none",
       "c": "vi"
      },
      "z2": {
+      "n": "Culga",
+      "t": "moon",
+      "r": 1177,
+      "dv": 600,
+      "e": "none",
       "c": "ch"
      },
      "be": {
-      "n": "Exavier",
+      "n": "Aberdon",
       "t": "moon",
-      "r": 3999,
-      "dv": 4716,
-      "e": "med",
+      "r": 1227,
+      "dv": 11293,
+      "e": "very_high",
       "c": "be"
      },
      "vs": {
-      "n": "Budkai",
-      "t": "planet",
-      "r": 5053,
-      "dv": 11358,
-      "e": "very_high",
       "c": "vs"
      }
     },
@@ -7827,11 +7582,6 @@
       "c": "be"
      },
      "vs": {
-      "n": "Nechrophos",
-      "t": "moon",
-      "r": 1380,
-      "dv": 5162,
-      "e": "high",
       "c": "vs"
      }
     },
@@ -8006,40 +7756,6 @@
      }
     },
     {
-     "seed": 1934760066,
-     "loot": "PEPSSEPSPSEEP",
-     "planets": 14,
-     "bodies": 61,
-     "naquiumDv": 60746,
-     "z1": {
-      "c": "vi"
-     },
-     "z2": {
-      "n": "Acisrind",
-      "t": "moon",
-      "r": 3467,
-      "dv": 9104,
-      "e": "max",
-      "c": "ch"
-     },
-     "be": {
-      "n": "Lath",
-      "t": "moon",
-      "r": 2016,
-      "dv": 1458,
-      "e": "very_high",
-      "c": "be"
-     },
-     "vs": {
-      "n": "Arendel",
-      "t": "planet",
-      "r": 10000,
-      "dv": 12335,
-      "e": "very_high",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 1788661998,
      "loot": "PESEPSSESPPEP",
      "planets": 14,
@@ -8137,6 +7853,69 @@
      }
     },
     {
+     "seed": 200741024,
+     "loot": "PSSEEPEPESSP",
+     "planets": 13,
+     "bodies": 49,
+     "naquiumDv": 39817,
+     "z1": {
+      "n": "Sturata",
+      "t": "moon",
+      "r": 2155,
+      "dv": 1639,
+      "e": "none",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Tarrasque",
+      "t": "moon",
+      "r": 2029,
+      "dv": 5032,
+      "e": "med",
+      "c": "ir"
+     },
+     "be": {
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 996931028,
+     "loot": "PSPSEEEPPSES",
+     "planets": 13,
+     "bodies": 52,
+     "naquiumDv": 21963,
+     "z1": {
+      "n": "Lacero",
+      "t": "planet",
+      "r": 7445,
+      "dv": 6612,
+      "e": "none",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Wayland",
+      "t": "moon",
+      "r": 3489,
+      "dv": 5971,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Rupel",
+      "t": "planet",
+      "r": 8119,
+      "dv": 5103,
+      "e": "max",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
      "seed": 1753505128,
      "loot": "PPEESSSEPPSE",
      "planets": 13,
@@ -8171,40 +7950,6 @@
      }
     },
     {
-     "seed": 200741024,
-     "loot": "PSSEEPEPESSP",
-     "planets": 13,
-     "bodies": 49,
-     "naquiumDv": 39817,
-     "z1": {
-      "n": "Sturata",
-      "t": "moon",
-      "r": 2155,
-      "dv": 1639,
-      "e": "none",
-      "c": "vch"
-     },
-     "z2": {
-      "n": "Tarrasque",
-      "t": "moon",
-      "r": 2029,
-      "dv": 5032,
-      "e": "med",
-      "c": "ir"
-     },
-     "be": {
-      "c": "be"
-     },
-     "vs": {
-      "n": "Tango",
-      "t": "moon",
-      "r": 1319,
-      "dv": 8070,
-      "e": "max",
-      "c": "vs"
-     }
-    },
-    {
      "seed": 2600314072,
      "loot": "PSSEEPPESEP",
      "planets": 12,
@@ -8232,6 +7977,40 @@
       "r": 1139,
       "dv": 1314,
       "e": "low",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1638003014,
+     "loot": "PSESEPEEPPS",
+     "planets": 12,
+     "bodies": 50,
+     "naquiumDv": 31677,
+     "z1": {
+      "n": "Jakiro",
+      "t": "moon",
+      "r": 1514,
+      "dv": 7262,
+      "e": "very_low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Anvil",
+      "t": "moon",
+      "r": 2564,
+      "dv": 5326,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Lethe",
+      "t": "planet",
+      "r": 5773,
+      "dv": 8151,
+      "e": "none",
       "c": "be"
      },
      "vs": {
@@ -8438,6 +8217,40 @@
      }
     },
     {
+     "seed": 3862942110,
+     "loot": "PSSPEEPSSP",
+     "planets": 11,
+     "bodies": 50,
+     "naquiumDv": 100316,
+     "z1": {
+      "n": "Boerdig",
+      "t": "moon",
+      "r": 1017,
+      "dv": 3175,
+      "e": "low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Goibniu",
+      "t": "moon",
+      "r": 3271,
+      "dv": 5574,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Benthai",
+      "t": "moon",
+      "r": 2648,
+      "dv": 5171,
+      "e": "very_high",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
      "seed": 1598185874,
      "loot": "PEPESSSEPP",
      "planets": 11,
@@ -8574,6 +8387,40 @@
      }
     },
     {
+     "seed": 3113754138,
+     "loot": "PEESSPEPEP",
+     "planets": 11,
+     "bodies": 54,
+     "naquiumDv": 33180,
+     "z1": {
+      "n": "Willownezz",
+      "t": "moon",
+      "r": 1011,
+      "dv": 5124,
+      "e": "very_low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Hermes",
+      "t": "moon",
+      "r": 4243,
+      "dv": 4810,
+      "e": "very_high",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Cybros",
+      "t": "moon",
+      "r": 1475,
+      "dv": 6647,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
      "seed": 3946707254,
      "loot": "PEPESSEPSP",
      "planets": 11,
@@ -8676,6 +8523,40 @@
      }
     },
     {
+     "seed": 1801407816,
+     "loot": "PSSEPEPEPE",
+     "planets": 11,
+     "bodies": 55,
+     "naquiumDv": 49308,
+     "z1": {
+      "n": "Lacero",
+      "t": "planet",
+      "r": 5184,
+      "dv": 6669,
+      "e": "none",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Wayland",
+      "t": "moon",
+      "r": 2487,
+      "dv": 5452,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Limos",
+      "t": "moon",
+      "r": 1341,
+      "dv": 8184,
+      "e": "very_high",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
      "seed": 2288336636,
      "loot": "PESESPEPSP",
      "planets": 11,
@@ -8737,6 +8618,74 @@
       "r": 2016,
       "dv": 6537,
       "e": "high",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2327417480,
+     "loot": "PEEPSSSPEP",
+     "planets": 11,
+     "bodies": 49,
+     "naquiumDv": 56402,
+     "z1": {
+      "n": "Willownezz",
+      "t": "moon",
+      "r": 1186,
+      "dv": 9435,
+      "e": "very_low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Anvil",
+      "t": "moon",
+      "r": 2472,
+      "dv": 4823,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Arkazious",
+      "t": "moon",
+      "r": 2469,
+      "dv": 8467,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 3785543546,
+     "loot": "PESSPEPEPE",
+     "planets": 11,
+     "bodies": 49,
+     "naquiumDv": 34128,
+     "z1": {
+      "n": "Lacero",
+      "t": "moon",
+      "r": 1849,
+      "dv": 9467,
+      "e": "none",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Hadur",
+      "t": "moon",
+      "r": 3642,
+      "dv": 6163,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Arae",
+      "t": "moon",
+      "r": 777,
+      "dv": 9736,
+      "e": "very_low",
       "c": "be"
      },
      "vs": {
@@ -8910,6 +8859,74 @@
       "r": 4007,
       "dv": 10889,
       "e": "low",
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 1184621744,
+     "loot": "PEPSSEPPSS",
+     "planets": 11,
+     "bodies": 58,
+     "naquiumDv": 54289,
+     "z1": {
+      "n": "Jakiro",
+      "t": "moon",
+      "r": 1776,
+      "dv": 11175,
+      "e": "med",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Lugh",
+      "t": "moon",
+      "r": 3800,
+      "dv": 5789,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Lamia",
+      "t": "planet",
+      "r": 4121,
+      "dv": 4924,
+      "e": "med",
+      "c": "be"
+     },
+     "vs": {
+      "c": "vs"
+     }
+    },
+    {
+     "seed": 2182374878,
+     "loot": "PESESPESPP",
+     "planets": 11,
+     "bodies": 56,
+     "naquiumDv": 37864,
+     "z1": {
+      "n": "Plenai",
+      "t": "planet",
+      "r": 9889,
+      "dv": 11871,
+      "e": "low",
+      "c": "vch"
+     },
+     "z2": {
+      "n": "Ptah",
+      "t": "moon",
+      "r": 2977,
+      "dv": 5901,
+      "e": "low",
+      "c": "ir"
+     },
+     "be": {
+      "n": "Cybros",
+      "t": "moon",
+      "r": 3221,
+      "dv": 1082,
+      "e": "none",
+      "c": "be"
+     },
+     "vs": {
       "c": "vs"
      }
     }
