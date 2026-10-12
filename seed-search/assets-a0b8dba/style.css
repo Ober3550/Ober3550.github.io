@@ -757,3 +757,4 @@ a.btn-sm {
 @media (max-width: 1180px) { .featured-scroll { overflow-x: auto; } }
 #featured-prod { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 #featured-prod label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.zone-card .download-row { flex-basis: 100%; }
