@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seed — Surface Explorer</title>
-  <link rel="stylesheet" href="assets-7ed2310/style.css">
+  <link rel="stylesheet" href="assets-b846816/style.css">
 </head>
 <body>
-  <div class="app">
-    <nav class="sidebar" id="sidebar"></nav>
+  <div class="app no-sidebar">
     <main id="main">
       <div class="page">
         <div class="crumbs"><span id="seed-crumb">Seed (client-side)</span></div>
         <h2>🌍 Seed <span class="badge zone-type" title="generated entirely in your browser — no backend">client-side</span></h2>
         <div class="filter-bar">
+          <label>Mod config: <select id="mod-select"></select></label>
           <label>Seed: <input type="number" id="seed-input" min="0" step="1" placeholder="e.g. 32094082" style="width:12em"></label>
           <button type="button" class="btn" id="gen-btn">Generate</button>
           <span id="gen-status" class="hint"></span><br/>
@@ -57,10 +57,10 @@
       </div>
     </main>
   </div>
-  <script src="assets-7ed2310/shell.js"></script>
-  <script src="assets-7ed2310/gen-bridge.js"></script>
-  <script src="assets-7ed2310/universe-wasm.js"></script>
-  <script src="assets-7ed2310/estimate-core.js"></script>
-  <script src="assets-7ed2310/analyze.js"></script>
+  <script src="assets-b846816/shell.js"></script>
+  <script src="assets-b846816/gen-bridge.js"></script>
+  <script src="assets-b846816/universe-wasm.js"></script>
+  <script src="assets-b846816/estimate-core.js"></script>
+  <script src="assets-b846816/analyze.js"></script>
 </body>
 </html>

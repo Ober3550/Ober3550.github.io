@@ -42,6 +42,9 @@ body {
   padding-left: 220px;
 }
 
+/* the static pages (index.html, surface.html) have no sidebar */
+.app.no-sidebar { padding-left: 0; }
+
 .sidebar {
   position: fixed;
   top: 0;

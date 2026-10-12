@@ -50,38 +50,4 @@
     seedHref: seedHref,
     surfaceHref: surfaceHref
   };
-
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; });
-  }
-
-  // Sidebar: mod selector + the seed link. The job / database pages only exist
-  // when the Node server is serving this folder (it mounts it at /static/).
-  function buildSidebar() {
-    var nav = document.getElementById("sidebar");
-    if (!nav) return;
-    var served = /\/static\/$/.test(new URL(base).pathname);
-    var opts = Object.keys(MODS).map(function (m) {
-      return '<option value="' + m + '"' + (m === mod ? " selected" : "") + ">" + esc(MODS[m]) + "</option>";
-    }).join("");
-    var extra = served
-      ? '<li><a href="/seeds?mod=' + encodeURIComponent(mod) + '">Seeds</a></li>' +
-        '<li><a href="/presets?mod=' + encodeURIComponent(mod) + '">Filter Presets</a></li>'
-      : "";
-    nav.innerHTML =
-      "<h1>🌌 Surface Explorer</h1>" +
-      '<label class="modcfg">Mod config <select id="mod-nav">' + opts + "</select></label>" +
-      '<ul class="nav-links">' +
-      '<li><a href="' + esc(seedHref(seed, mod)) + '" title="Seed → universe → surface, entirely in your browser">🌍 Seed</a></li>' +
-      extra + "</ul>";
-    // changing the mod config reloads the same page with ?mod= swapped
-    document.getElementById("mod-nav").addEventListener("change", function (e) {
-      var p = new URLSearchParams(location.search);
-      p.set("mod", e.target.value);
-      location.href = location.pathname + "?" + p.toString();
-    });
-  }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", buildSidebar);
-  else buildSidebar();
 })();

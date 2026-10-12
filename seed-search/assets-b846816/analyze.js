@@ -375,6 +375,19 @@
       document.getElementById("featured").open = false;
       generate();
     });
+    // Mod config: changing it reloads the page with ?mod= swapped (the seed
+    // and the other settings in the address are kept).
+    var modEl = document.getElementById("mod-select");
+    if (modEl) {
+      modEl.innerHTML = Object.keys(MODS).map(function (m) {
+        return '<option value="' + m + '"' + (m === state.mod ? " selected" : "") + ">" + esc(MODS[m]) + "</option>";
+      }).join("");
+      modEl.addEventListener("change", function (e) {
+        var p = new URLSearchParams(location.search);
+        p.set("mod", e.target.value);
+        location.href = location.pathname + "?" + p.toString();
+      });
+    }
     window.preloadUniverseWasm && window.preloadUniverseWasm();
     applyMod();
     var crumb = document.getElementById("seed-crumb");

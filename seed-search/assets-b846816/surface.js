@@ -40,6 +40,10 @@
   function canvasMax() {
     if (!canvasMaxP) {
       canvasMaxP = (async function () {
+        // ?maxcanvas=N pretends the device stops at N (testing the downscaled
+        // path a phone takes on a desktop)
+        var forced = parseInt(new URLSearchParams(location.search).get("maxcanvas"), 10);
+        if (forced > 0) { DISP_MAX = forced; return forced; }
         function works(W) {
           try {
             var cv = document.createElement("canvas");
@@ -373,13 +377,17 @@
   }
 
   // Ore for the square [-R,R)^2, one request per chunk-aligned cell: spread
-  // over the worker pool nearest-to-spawn first and drawn onto `oreCv` (2R px
-  // a side, transparent where there is no ore) as each cell lands. `show(x, y,
-  // w, h)` is called for every canvas rect that changed and `onProgress(done,
-  // total)` after each cell. Resolves to { name: { amount, display } }.
+  // over the worker pool nearest-to-spawn first and drawn onto `oreCv`
+  // (transparent where there is no ore) as each cell lands. `oreCv` is 2R px a
+  // side, or smaller when the surface is shown downscaled (a phone's canvas
+  // limit): cells are then drawn scaled down to it. `show(x, y, w, h)` is
+  // called for every canvas rect that changed and `onProgress(done, total)`
+  // after each cell. Resolves to { name: { amount, display } }.
   var ORE_CELL = 256;
   function streamOre(z, R, diskR, palette, oreCv, show, onProgress) {
     var octx = oreCv.getContext("2d");
+    var scale = (2 * R) / oreCv.width; // tiles per canvas pixel
+    octx.imageSmoothingEnabled = true;
     var R2 = diskR * diskR;
     var cells = [];
     for (var y = Math.floor(-R / ORE_CELL) * ORE_CELL; y < R; y += ORE_CELL) {
@@ -399,6 +407,13 @@
     // a well's 3x3 footprint, clipped to the disk and the canvas
     function drawWell(wx, wy, ci) {
       octx.fillStyle = "rgb(" + FLUID_COLORS[ci].join(",") + ")";
+      if (scale !== 1) {
+        // downscaled: one square, kept at least 2 px so a well stays visible
+        if (wx * wx + wy * wy > R2) return;
+        var side = Math.max(2, 3 / scale);
+        octx.fillRect((wx + 0.5 + R) / scale - side / 2, (wy + 0.5 + R) / scale - side / 2, side, side);
+        return;
+      }
       for (var dy = -1; dy <= 1; dy++) {
         for (var dx = -1; dx <= 1; dx++) {
           var tx = wx + dx, ty = wy + dy;
@@ -407,7 +422,9 @@
         }
       }
     }
+    // a changed rect in tiles from the square's corner -> canvas pixels
     function clampShow(x, y, w, h) {
+      if (scale !== 1) { w = Math.ceil((x + w) / scale) + 2; h = Math.ceil((y + h) / scale) + 2; x = Math.floor(x / scale) - 2; y = Math.floor(y / scale) - 2; w -= x; h -= y; }
       var x0 = Math.max(0, x), y0 = Math.max(0, y), x1 = Math.min(oreCv.width, x + w), y1 = Math.min(oreCv.height, y + h);
       if (x1 > x0 && y1 > y0) show(x0, y0, x1 - x0, y1 - y0);
     }
@@ -437,7 +454,7 @@
         var img = cx.createImageData(w, h);
         img.data.set(px);
         cx.putImageData(img, 0, 0);
-        octx.drawImage(cellCv, 0, 0, w, h, c.x0 + R, c.y0 + R, w, h);
+        octx.drawImage(cellCv, 0, 0, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
         for (var k = 0; k < mine.length; k += 3) { drawWell(mine[k], mine[k + 1], mine[k + 2]); wells.push(mine[k], mine[k + 1], mine[k + 2]); }
         clampShow(c.x0 + R - 1, c.y0 + R - 1, w + 2, h + 2);
         var res = r.summary.resources || {};
@@ -452,7 +469,7 @@
     return Promise.all(jobs).then(function () {
       // wells go over ore, whichever cell landed first
       for (var k = 0; k < wells.length; k += 3) drawWell(wells[k], wells[k + 1], wells[k + 2]);
-      if (wells.length) clampShow(0, 0, oreCv.width, oreCv.height);
+      if (wells.length) clampShow(0, 0, 2 * R, 2 * R);
       Object.keys(totals).forEach(function (rn) {
         var v = totals[rn].amount;
         totals[rn].display = v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(2) + "M" : String(v);
@@ -619,10 +636,10 @@
         els.canvas.width = disp;
         els.canvas.height = disp;
         var GL = layersBegin(disp, null);
-        // Ore runs on the CPU workers while the GPU does the terrain. (Not
-        // above the usable canvas size: there is no ore overlay there yet.)
+        // Ore runs on the CPU workers while the GPU does the terrain; on a
+        // downscaled surface it is drawn scaled down like the terrain.
         var visible = els.canvas.getContext("2d");
-        var oreCv = layer === 0 && !downscaled ? (GL ? GL.ore : newCanvas(disp)) : null;
+        var oreCv = layer === 0 ? (GL ? GL.ore : newCanvas(disp)) : null;
         var terrainDone = false;
         function showOre(x, y, w, h) {
           if (!oreCv) return;
@@ -666,7 +683,7 @@
                 c.x / scaleS, c.y / scaleS, c.w / scaleS, c.h / scaleS);
             }
             if (GL) compositeSA(Math.floor(c.x / scaleS), Math.floor(c.y / scaleS), Math.ceil(c.w / scaleS) + 1, Math.ceil(c.h / scaleS) + 1);
-            else showOre(c.x, c.y, c.w, c.h); // put back the ore this cell covered
+            else showOre(Math.floor(c.x / scaleS), Math.floor(c.y / scaleS), Math.ceil(c.w / scaleS) + 1, Math.ceil(c.h / scaleS) + 1); // put back the ore this cell covered
             status("gpu: " + label + " " + c.done + "/" + c.total + " cells…");
             setProgress(c.total ? c.done / c.total : 0);
           }
@@ -694,11 +711,6 @@
           }, function (e) { console.error("lake patch failed:", e); return cells; });
         }).then(function (cells) {
           var out = { cells: cells, backend: backend, width: disp, height: disp, scale: scaleS, downscaled: downscaled };
-          if (downscaled && layer === 0) {
-            // ore overlay is not practical at >DISPLAY_MAX-res disks yet
-            window.__GPU_STAGE__ = "done";
-            return { out: out, z: z, totals: {} };
-          }
           if (oreP) {
             window.__GPU_STAGE__ = "ore";
             terrainDone = true;
@@ -825,13 +837,13 @@
       window.__LAST_SURF_AT__ = Date.now();
       window.__LAST_SURF__ = { zone: z.n, type: z.t, resources: totals, layer: layer, gpu: true, ore: layer === 0 ? "cpu" : null };
       var px = out.width * out.height;
-      var modeTxt = layer === 0 && !out.downscaled ? "WebGPU terrain + CPU ore" : "WebGPU " + (out.backend || "kernel");
+      var modeTxt = layer === 0 ? "WebGPU terrain + CPU ore" : "WebGPU " + (out.backend || "kernel");
       els.res.innerHTML =
-        (layer === 0 && !out.downscaled && surfChips(totals) ? surfChips(totals) + " " : "") +
-        '<span class="hint">· ' + out.width + "×" + out.height + (out.downscaled ? " (downscaled ×" + out.scale.toFixed(1) + ", ore overlay above usable canvas size not yet)" : "") + " · " + modeTxt + " (" +
+        (layer === 0 && surfChips(totals) ? surfChips(totals) + " " : "") +
+        '<span class="hint">· ' + out.width + "×" + out.height + (out.downscaled ? " (shown at 1/" + out.scale.toFixed(1) + " size: this device's canvas limit)" : "") + " · " + modeTxt + " (" +
         out.cells + (out.cells === 1 ? " cell dispatch" : " cell dispatches") + ") · " + ms + " ms · " +
         (px / ms / 1000).toFixed(2) + " Mpx/s</span>";
-      status("zone " + z.n + " · " + z.t + " · r" + radius + (layer === 0 && !out.downscaled ? " (WebGPU terrain + CPU ore)" : " (WebGPU" + (out.downscaled ? ", downscaled preview)" : ")")));
+      status("zone " + z.n + " · " + z.t + " · r" + radius + (layer === 0 ? " (WebGPU terrain + CPU ore" : " (WebGPU") + (out.downscaled ? ", downscaled)" : ")"));
     }, function (e) {
       // WebGPU unavailable / failure -> CPU wasm pipeline for the same request.
       console.error("WebGPU terrain failed, falling back to wasm:", e);
