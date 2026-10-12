@@ -889,14 +889,10 @@
     });
     if (kind === "sa") {
       var p = PLANETS[planetKey];
-      els.meta.innerHTML = '<span class="hint">Space Age planet tiles, generated from the game\'s map-gen data (sa.wasm).</span>';
+      els.meta.innerHTML = '<span class="hint">default map settings</span>';
       els.badge.textContent = "planet";
     } else if (kind === "nauvis") {
-      var vanilla = MOD !== "se" && MOD !== "k2se";
-      els.meta.innerHTML = "<span class=\"hint\">game-default map settings" +
-        (vanilla
-          ? ", base-game Nauvis tiles (real 2.0 tile palette; tile selection approximated until expression_in_range is ported)."
-          : ", SE ground (alien-biomes, exact).") + "</span>";
+      els.meta.innerHTML = '<span class="hint">default map settings</span>';
     } else {
       els.meta.innerHTML = '<span class="hint">resolving universe…</span>';
       fetchZone().then(function (z) {

@@ -7,7 +7,7 @@
 (function () {
   var estimator = null;   // { estimateZoneOre }
   var MODS = { base: "Base", sa: "Space Age", se: "Space Exploration", k2se: "SE + K2" };
-  var state = { mod: MODS[window.Shell.mod] ? window.Shell.mod : "k2se", k2: true, zones: [], sortKey: "dv", sortDir: "asc", q: "", calidus: true, onlyHl: false };
+  var state = { mod: MODS[window.Shell.mod] ? window.Shell.mod : "k2se", k2: true, zones: [], sortKey: "dv", sortDir: "asc", q: "", calidus: true, onlyHl: true };
   state.k2 = state.mod === "k2se";
 
   function loadEstimator() {
@@ -103,25 +103,37 @@
   // default map-gen path (terrain + ores); "sa" = SA planet tile map from the
   // data-driven generator (sa.wasm).
   var SA_SURFACES = [
-    { n: "Nauvis",   icon: "🌍", t: "planet", water: "some", enemy: "some", kind: "surface-nauvis" },
-    { n: "Vulcanus", icon: "🌋", t: "planet", water: "none", enemy: "yes",  kind: "sa", planet: "vulcanus", ok: true },
-    { n: "Fulgora",  icon: "⚡", t: "planet", water: "none", enemy: "none", kind: "sa", planet: "fulgora",  ok: true },
-    { n: "Gleba",    icon: "🍄", t: "planet", water: "some", enemy: "yes",  kind: "sa", planet: "gleba",    ok: true },
-    { n: "Aquilo",   icon: "🧊", t: "planet", water: "none", enemy: "none", kind: "sa", planet: "aquilo",   ok: true }
+    { n: "Nauvis",   icon: "🌍", t: "planet", water: "some", enemy: "some", kind: "surface-nauvis", colors: ["#3fb950", "#58a6ff"] },
+    { n: "Vulcanus", icon: "🌋", t: "planet", water: "none", enemy: "yes",  kind: "sa", planet: "vulcanus", ok: true, colors: ["#f85149", "#e6b422"] },
+    { n: "Fulgora",  icon: "⚡", t: "planet", water: "none", enemy: "none", kind: "sa", planet: "fulgora",  ok: true, colors: ["#a371f7", "#d24fd0"] },
+    { n: "Gleba",    icon: "🍄", t: "planet", water: "some", enemy: "yes",  kind: "sa", planet: "gleba",    ok: true, colors: ["#a4e22a", "#ff8fd8"] },
+    { n: "Aquilo",   icon: "🧊", t: "planet", water: "none", enemy: "none", kind: "sa", planet: "aquilo",   ok: true, colors: ["#58a6ff", "#39d3d3"] }
   ];
 
   function listSurfaces() {
     // base → Nauvis only; sa → the five surfaces (Nauvis + 4 SA planets).
     var defs = state.mod === "base" ? SA_SURFACES.slice(0, 1) : SA_SURFACES;
     state.zones = defs.map(function (d) {
-      var z = { n: d.n, icon: d.icon, t: d.t, water: d.water, enemy: d.enemy, p: null, r: null, infinity: true, kind: d.kind };
+      var z = { n: d.n, icon: d.icon, t: d.t, water: d.water, enemy: d.enemy, p: null, r: null, infinity: true, kind: d.kind, colors: d.colors };
       if (d.kind === "sa") { z.planet = d.planet; z.ok = !!d.ok; z.why = d.why || ""; }
       else if (d.kind === "surface-nauvis") { z.nauvis = true; z.s = state.seed || 0; z.r = 5000; }
       return z;
     });
-    renderTable();
+    renderPlanetCards();
     var st = document.getElementById("gen-status");
     if (st) st.textContent = "";
+  }
+  // Base / Space Age: the surfaces are the same for every seed and have no
+  // universe data worth a table, so each is a card in its planet's colours.
+  // A card opens the surface once a seed has been entered.
+  function renderPlanetCards() {
+    document.getElementById("planet-cards").innerHTML = state.zones.map(function (z) {
+      var open = rowOpen(z);
+      return '<div class="planet-card' + (open ? "" : " row-closed") + '"' + (open ? ' data-href="' + esc(surfHref(z)) + '"' : "") +
+        ' style="--combo:linear-gradient(90deg,' + z.colors.map(function (c) { return c + "66"; }).join(",") + ')"' +
+        ' title="' + (open ? "Open " + esc(z.n) + " on its own page" : "enter a seed first") + '">' +
+        '<span class="planet-icon">' + z.icon + "</span> " + esc(z.n) + "</div>";
+    }).join("");
   }
   function nm(r) { return r.replace(/^se-/, "").replace(/^kr-/, "").replace(/-ore$/, ""); }
   function fmt(n) { return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : Math.round(n); }
@@ -291,10 +303,10 @@
   }
 
   // This page's address for a seed: the mod config, the seed and whether only
-  // the highlighted rows are shown (?hl=1), so a reload or a shared link opens
+  // the highlighted rows are shown (on unless ?hl=0), so a reload or a shared link opens
   // the same view.
   function pageHref(seed) {
-    return window.Shell.seedHref(seed, state.mod) + (state.onlyHl ? "&hl=1" : "");
+    return window.Shell.seedHref(seed, state.mod) + (state.onlyHl ? "" : "&hl=0");
   }
   function syncUrl() {
     history.replaceState(null, "", pageHref(state.seed));
@@ -337,7 +349,7 @@
     if (calEl) calEl.addEventListener("change", function (e) { state.calidus = e.target.checked; renderTable(); });
     var hlEl = document.getElementById("hl-filter");
     if (hlEl) {
-      state.onlyHl = new URLSearchParams(location.search).get("hl") === "1";
+      state.onlyHl = new URLSearchParams(location.search).get("hl") !== "0";
       hlEl.checked = state.onlyHl;
       hlEl.addEventListener("change", function (e) {
         state.onlyHl = e.target.checked;
@@ -366,6 +378,17 @@
         if (st) st.textContent = closed.getAttribute("data-why") || "enter a seed first";
       }
     });
+    document.getElementById("planet-cards").addEventListener("click", function (e) {
+      var card = e.target.closest(".planet-card");
+      if (!card) return;
+      if (card.dataset.href) { location.href = card.dataset.href; return; }
+      var st = document.getElementById("gen-status");
+      if (st) st.textContent = "enter a seed first";
+    });
+    // the zone table and its filters belong to the Space Exploration universe
+    var staticMod = state.mod === "sa" || state.mod === "base";
+    document.getElementById("zone-table").hidden = staticMod;
+    document.querySelectorAll(".se-only").forEach(function (el) { el.hidden = staticMod; });
     var featuredHead = document.getElementById("featured-head");
     if (featuredHead) featuredHead.addEventListener("click", function (e) {
       var thEl = e.target.closest("th[data-key]");

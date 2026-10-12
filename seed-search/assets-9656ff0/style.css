@@ -422,6 +422,15 @@ dd { font-weight: 500; }
 .loot-P { color: #ff8fd8; }
 .loot-S { color: #58a6ff; }
 .loot-E { color: #3fb950; }
+/* base / Space Age: one card per planet, in its colours */
+.planet-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.planet-cards:empty { display: none; }
+.planet-card { background: var(--combo); border-radius: 8px; padding: 18px 16px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+.planet-card:hover { filter: brightness(1.25); }
+.planet-card.row-closed { cursor: default; }
+.planet-icon { margin-right: 6px; }
+.seed-controls > [hidden], #zone-table[hidden] { display: none; }
+
 /* surfaces holding a resource combination (analyze.js COMBOS) */
 #zone-table tbody tr.row-combo { background: var(--combo); }
 #zone-table tbody tr.row-combo td { background: transparent; }
