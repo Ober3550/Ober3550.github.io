@@ -116,6 +116,10 @@
     dim: document.getElementById("sf-dim"),
     go: { disabled: false },
     dimVal: document.getElementById("sf-dim-val"),
+    enemyWrap: document.getElementById("sf-enemy-wrap"),
+    enemy: document.getElementById("sf-enemy"),
+    areas: document.getElementById("sf-areas"),
+    groups: document.getElementById("sf-groups"),
     status: document.getElementById("sf-status"),
     canvas: document.getElementById("sf-canvas"),
     // The result line is written as "<resource chips> <hint>· size · timing…";
@@ -172,7 +176,8 @@
     worker.ore = j.lane === "ore";
     if (worker.ore) oreBusy++;
     pending[j.id] = { resolve: j.resolve, reject: j.reject };
-    worker.postMessage({ id: j.id, type: j.type, req: j.req });
+    if (j.tiles) worker.postMessage({ id: j.id, type: j.type, req: j.req, tiles: j.tiles }, [j.tiles.buffer]);
+    else worker.postMessage({ id: j.id, type: j.type, req: j.req });
   }
 
   function spawnPool() {
@@ -201,10 +206,11 @@
     }
   }
 
-  function sendToPool(req, type, lane) {
+  // `tiles`: optional bytes handed to the worker with the request
+  function sendToPool(req, type, lane, tiles) {
     type = type || "surface";
     return new Promise(function (resolve, reject) {
-      (lane === "ore" ? oreQueue : queue).push({ id: nextId++, type: type, req: req, lane: lane, resolve: resolve, reject: reject });
+      (lane === "ore" ? oreQueue : queue).push({ id: nextId++, type: type, req: req, lane: lane, tiles: tiles, resolve: resolve, reject: reject });
       for (var i = 0; i < pool.length; i++) {
         if (!pool[i].idle) continue;
         var j = nextJob();
@@ -314,6 +320,11 @@
         console.error("ore pass failed:", e);
       });
 
+      // enemy areas after the ore, in the same lane
+      var enemies = layer === 0 && zoneHasEnemies(zoneObj) ? streamEnemies(zoneObj, R, diskR, palette, npx, function (n, total) {
+        if (n < total) status("mapping enemy bases " + n + "/" + total + " cells…");
+      }) : Promise.resolve();
+
       function terrainCell(cell) {
         return sendToPool({
           seed: SEED, k2: K2, zone: zoneObj, layer: 1, radius: diskR, palette: palette,
@@ -345,9 +356,11 @@
 
       var jobs = [];
       for (var c = 0; c < cells.length; c++) jobs.push(terrainCell(cells[c]));
-      // All terrain cells, then the ore overlay, then resolve.
+      // All terrain cells, then the ore overlay and the enemy areas, then resolve.
       Promise.all(jobs).then(function () {
         return ore;
+      }).then(function () {
+        return enemies;
       }).then(finish, finish);
     });
   }
@@ -533,22 +546,176 @@
   var oreOverlayEl = null;
   function oreOverlayClear() {
     if (oreOverlayEl) { oreOverlayEl.remove(); oreOverlayEl = null; }
+    enemyOverlayClear();
     els.canvas.style.filter = "";
   }
-  // A fresh ore canvas of `px` x `px`, placed exactly over the terrain canvas.
-  function oreOverlay(px) {
-    oreOverlayClear();
+  // a canvas of `px` x `px` placed exactly over the terrain canvas
+  function overlayCanvas(px, z) {
     var c = newCanvas(px);
     var box = els.canvas.parentNode;
     box.style.position = "relative";
     // sized by the same rules as the canvas under it (#sf-canvas in style.css)
     c.style.cssText = "position:absolute;pointer-events:none;width:100%;max-width:720px;height:auto;image-rendering:pixelated;" +
-      "left:" + els.canvas.offsetLeft + "px;top:" + els.canvas.offsetTop + "px";
+      "z-index:" + z + ";left:" + els.canvas.offsetLeft + "px;top:" + els.canvas.offsetTop + "px";
     box.appendChild(c);
-    oreOverlayEl = c;
-    applyDim();
     return c;
   }
+  // A fresh ore canvas, over the terrain (and over the enemy areas).
+  function oreOverlay(px) {
+    oreOverlayClear();
+    oreOverlayEl = overlayCanvas(px, 2);
+    applyDim();
+    return oreOverlayEl;
+  }
+
+  // ── Enemy base areas ──────────────────────────────────────────────────────
+  // A third canvas between the terrain and the ore: translucent red wherever
+  // the game can place a nest (spawners and worms), stronger where that is
+  // likelier - or, on a Space Age planet, the entities themselves (rocks,
+  // trees, plants, nests). It is drawn once; the checkbox only shows or
+  // hides the canvas. ?entities=0 (or ?enemies=0) skips generating it.
+  var ENEMIES = !/[?&](enemies|entities)=0\b/.test(location.search);
+  var ENTITIES_HINT = "Rocks, trees, cliffs and enemy nests, placed the way the game places them. Counts and clusters match the game; exact positions only where every tile of the chunk matches too.";
+  var ENEMY_AREAS_HINT = "Red marks where the game can place enemy nests (spawners and worms), stronger where a nest is likelier. These are the areas, not the individual nests.";
+  var enemyOverlayEl = null;
+  // Entities come in one canvas, each class in its own colour (classColor in
+  // sa_surface.zig). The per-group checkboxes hide groups by showing a copy
+  // of that canvas with the unticked groups' pixels left out - made only
+  // while something is unticked, so the usual case costs no extra canvas.
+  var ENTITY_GROUPS = {
+    enemies: [[255, 40, 40], [255, 64, 40]],
+    trees: [[50, 92, 44], [62, 104, 52]],
+    rocks: [[129, 105, 78], [160, 120, 190]],
+    huge: [[176, 148, 112]],
+    cliffs: [[144, 119, 87]]
+  };
+  var entityMode = false;   // the overlay holds entities (else enemy areas)
+  var entityViewEl = null;  // the filtered copy, while a group is hidden
+  function enemyOverlayClear() {
+    if (enemyOverlayEl) { enemyOverlayEl.remove(); enemyOverlayEl = null; }
+    if (entityViewEl) { entityViewEl.remove(); entityViewEl = null; }
+    if (els.enemyWrap) els.enemyWrap.hidden = true;
+  }
+  // label = "Entities": the per-group checkboxes; otherwise the one checkbox
+  function enemyOverlay(px, label, hint) {
+    enemyOverlayClear();
+    enemyOverlayEl = overlayCanvas(px, 1);
+    entityMode = label === "Entities";
+    if (els.enemyWrap) {
+      els.enemyWrap.hidden = false;
+      els.enemyWrap.title = hint || ENEMY_AREAS_HINT;
+      if (els.areas) els.areas.hidden = entityMode;
+      if (els.groups) els.groups.hidden = !entityMode;
+    }
+    showEnemies();
+    return enemyOverlayEl;
+  }
+  function hiddenGroups() {
+    var off = [];
+    if (els.groups) els.groups.querySelectorAll("input[data-group]").forEach(function (cb) { if (!cb.checked) off.push(cb.dataset.group); });
+    return off;
+  }
+  // Copy a rect of the entity canvas to the filtered view without the
+  // hidden groups (a pixel belongs to the group whose colour it is nearest,
+  // which also sorts the blended pixels of a downscaled canvas).
+  function filterEntities(x, y, w, h, off) {
+    var src = enemyOverlayEl.getContext("2d"), dst = entityViewEl.getContext("2d");
+    var drop = [];
+    Object.keys(ENTITY_GROUPS).forEach(function (g) { ENTITY_GROUPS[g].forEach(function (c) { drop.push([c[0], c[1], c[2], off.indexOf(g) !== -1]); }); });
+    var STEP = 1024;
+    for (var ty = y; ty < y + h; ty += STEP) {
+      for (var tx = x; tx < x + w; tx += STEP) {
+        var bw = Math.min(STEP, x + w - tx), bh = Math.min(STEP, y + h - ty);
+        var img = src.getImageData(tx, ty, bw, bh), d = img.data;
+        for (var i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          var best = 0, bd = Infinity;
+          for (var k = 0; k < drop.length; k++) {
+            var dr = d[i] - drop[k][0], dg = d[i + 1] - drop[k][1], db = d[i + 2] - drop[k][2];
+            var dist = dr * dr + dg * dg + db * db;
+            if (dist < bd) { bd = dist; best = k; }
+          }
+          if (drop[best][3]) d[i + 3] = 0;
+        }
+        dst.putImageData(img, tx, ty);
+      }
+    }
+  }
+  function showEnemies() {
+    if (!enemyOverlayEl) return;
+    if (!entityMode) {
+      enemyOverlayEl.style.display = !els.enemy || els.enemy.checked ? "" : "none";
+      return;
+    }
+    var off = hiddenGroups();
+    if (!off.length) {
+      if (entityViewEl) { entityViewEl.remove(); entityViewEl = null; }
+      enemyOverlayEl.style.display = "";
+      return;
+    }
+    if (!entityViewEl) entityViewEl = overlayCanvas(enemyOverlayEl.width, 1);
+    enemyOverlayEl.style.display = "none";
+    filterEntities(0, 0, enemyOverlayEl.width, enemyOverlayEl.height, off);
+  }
+  // after new entities were drawn into a rect: bring the filtered view up to date
+  function entitiesDrawn(x, y, w, h) {
+    if (!entityViewEl) return;
+    x = Math.max(0, Math.floor(x)); y = Math.max(0, Math.floor(y));
+    w = Math.min(enemyOverlayEl.width - x, Math.ceil(w) + 1); h = Math.min(enemyOverlayEl.height - y, Math.ceil(h) + 1);
+    if (w > 0 && h > 0) filterEntities(x, y, w, h, hiddenGroups());
+  }
+  // Does this SE surface have enemies to map? (Nauvis always; a zone by its
+  // enemy tag; never an asteroid field.)
+  function zoneHasEnemies(z) {
+    return ENEMIES && z.t !== "asteroid-field" && (!!z.nauvis || (!!z.enemy && z.enemy !== "none"));
+  }
+  // The enemy areas of an SE zone / Nauvis for the square [-R,R)^2, onto a new
+  // enemy canvas of `px` a side: one request per chunk-aligned cell, nearest
+  // to spawn first, behind the ore cells in the same worker lane. Never
+  // rejects - the layer is an extra, a failure only leaves it incomplete.
+  // Base-game Nauvis gets the entities themselves (rocks, trees, cliffs,
+  // nests) instead of areas. `terrain(cell)`, when given, returns the cell's
+  // terrain pixels as already drawn, which saves that request working the
+  // tiles out again.
+  function streamEnemies(z, R, diskR, palette, px, onProgress, terrain) {
+    var entities = squareSurface(z);
+    var ectx = (entities ? enemyOverlay(px, "Entities", ENTITIES_HINT) : enemyOverlay(px)).getContext("2d");
+    var scale = (2 * R) / px;
+    ectx.imageSmoothingEnabled = true;
+    var cells = [];
+    for (var y = Math.floor(-R / ORE_CELL) * ORE_CELL; y < R; y += ORE_CELL) {
+      for (var x = Math.floor(-R / ORE_CELL) * ORE_CELL; x < R; x += ORE_CELL) {
+        var c = { x0: Math.max(x, -R), y0: Math.max(y, -R), x1: Math.min(x + ORE_CELL, R), y1: Math.min(y + ORE_CELL, R) };
+        // nearest point of the cell to spawn: cells wholly off the disk are empty
+        var nx = Math.max(c.x0, Math.min(0, c.x1 - 1)), ny = Math.max(c.y0, Math.min(0, c.y1 - 1));
+        if (nx * nx + ny * ny > diskR * diskR) continue;
+        c.d2 = Math.pow((c.x0 + c.x1) / 2, 2) + Math.pow((c.y0 + c.y1) / 2, 2);
+        cells.push(c);
+      }
+    }
+    cells.sort(function (a, b) { return a.d2 - b.d2; });
+    var done = 0;
+    return Promise.all(cells.map(function (c) {
+      var tiles = terrain ? terrain(c) : null;
+      return sendToPool({
+        seed: SEED, k2: K2, zone: z, layer: 3, radius: diskR, palette: palette, tiles_in: !!tiles,
+        rect: { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1 }, square: squareSurface(z)
+      }, "surface", "ore", tiles).then(function (r) {
+        var w = c.x1 - c.x0, h = c.y1 - c.y0;
+        if (r.summary.enemy_tiles) {
+          var cx = cellCanvas(w, h);
+          var img = cx.createImageData(w, h);
+          img.data.set(r.pixels);
+          cx.putImageData(img, 0, 0);
+          ectx.drawImage(cellCv, 0, 0, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
+          entitiesDrawn((c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
+        }
+        done++;
+        if (onProgress) onProgress(done, cells.length);
+      }, function (e) { console.error("enemy areas cell failed:", e); });
+    }));
+  }
+
   // Terrain brightness from the slider. (Only under ore: a terrain-only view
   // stays at full brightness.)
   function applyDim() {
@@ -640,6 +807,7 @@
           setProgress(total ? n / total : 0);
         });
         if (oreP) oreP.catch(function () {}); // reported where it is awaited below
+        var oreDone = false;
         var gpuKind, backend, label;
         // Nauvis: base-game tiles, except under Space Exploration, where the
         // ground is alien-biomes like every other SE surface
@@ -695,13 +863,25 @@
           }, function (e) { console.error("lake patch failed:", e); return cells; });
         }).then(function (cells) {
           var out = { cells: cells, backend: backend, width: disp, height: disp, scale: scaleS, downscaled: downscaled };
+          // The enemy areas / entities start once the terrain is complete, so
+          // base-game Nauvis can take its tiles from the canvas (when it is
+          // drawn at full size) rather than work them out again.
+          var tctx = els.canvas.getContext("2d");
+          var enemyP = oreCv && zoneHasEnemies(z) ? streamEnemies(z, R, diskR, palette, disp, function (n, total) {
+            if (oreDone && n < total) status("mapping " + (squareSurface(z) ? "entities " : "enemy bases ") + n + "/" + total + " cells…");
+          }, squareSurface(z) && scaleS === 1 ? function (c) {
+            return new Uint8Array(tctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
+          } : null) : Promise.resolve();
           if (oreP) {
             window.__GPU_STAGE__ = "ore";
             terrainDone = true;
             status("gpu terrain ready — placing ore (CPU wasm)…");
             return oreP.then(function (totals) {
-              window.__GPU_STAGE__ = "done";
-              return { out: out, z: z, totals: totals };
+              oreDone = true;
+              return enemyP.then(function () {
+                window.__GPU_STAGE__ = "done";
+                return { out: out, z: z, totals: totals };
+              });
             });
           }
           window.__GPU_STAGE__ = "done";
@@ -734,9 +914,20 @@
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(cellCv, 0, 0, w, h, tx / scale, ty / scale, w / scale, h / scale);
       };
+      // like blit, but drawn over what is there: an entity on a cell's edge
+      // reaches into the next cell, whose own (transparent) pixels must not erase it
+      var blitOver = function (ctx, w, h, px, tx, ty) {
+        var cx = cellCanvas(w, h);
+        var cimg = cx.createImageData(w, h);
+        cimg.data.set(px);
+        cx.putImageData(cimg, 0, 0);
+        ctx.imageSmoothingEnabled = scale !== 1;
+        ctx.drawImage(cellCv, 0, 0, w, h, tx / scale, ty / scale, w / scale, h / scale);
+      };
       var run_ = sa;
       var tctx = els.canvas.getContext("2d");
       var octx = oreOverlay(disp).getContext("2d");
+      var ectx = null;
       // cells on the 128-tile grid (whole chunks), clipped to [-R,R)
       var CELL = R > 1500 ? 256 : 128;
       var cells = [];
@@ -760,6 +951,12 @@
             var n = r.summary.width * r.summary.height * 4;
             blit(tctx, r.summary.width, r.summary.height, r.pixels.subarray(0, n), c.x0 + R, c.y0 + R);
             blit(octx, r.summary.width, r.summary.height, r.pixels.subarray(n, 2 * n), c.x0 + R, c.y0 + R);
+            if (r.summary.entity_layer && ENEMIES) {
+              // third layer: the planet's rocks, trees, plants and nests
+              if (!ectx) ectx = enemyOverlay(disp, "Entities", ENTITIES_HINT).getContext("2d");
+              blitOver(ectx, r.summary.width, r.summary.height, r.pixels.subarray(2 * n, 3 * n), c.x0 + R, c.y0 + R);
+              entitiesDrawn((c.x0 + R) / scale, (c.y0 + R) / scale, r.summary.width / scale, r.summary.height / scale);
+            }
             (r.summary.tiles || []).forEach(function (t) {
               if (!counts[t.name]) counts[t.name] = { color: t.color, count: 0 };
               counts[t.name].count += t.count;
@@ -883,6 +1080,8 @@
       if (_ly != null && ["0", "1", "2"].indexOf(_ly) !== -1) els.layer.value = _ly;
     } catch (e2) {}
     adaptForKind();
+    if (els.enemy) els.enemy.addEventListener("change", showEnemies);
+    if (els.groups) els.groups.addEventListener("change", showEnemies);
     if (els.dim) els.dim.addEventListener("input", function () {
       if (els.dimVal) els.dimVal.textContent = els.dim.value + "%";
       compositeSA();

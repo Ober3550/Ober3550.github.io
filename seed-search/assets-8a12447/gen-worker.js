@@ -52,13 +52,19 @@
     });
   }
 
-  function generateSurface(req) {
+  // `tiles`: optional bytes for the module's second input buffer (the rect's
+  // terrain pixels, for a request with tiles_in)
+  function generateSurface(req, tiles) {
     return wasm("surface.wasm").then(function (inst) {
       var e = inst.instance.exports;
       var bytes = new TextEncoder().encode(JSON.stringify(req));
       // growInput may grow wasm memory → re-create the view afterwards.
       if (bytes.length > e.inputCap()) {
         if (!e.growInput(bytes.length)) throw new Error("surface wasm: input buffer grow failed");
+      }
+      if (tiles) {
+        if (!e.growTilesIn(tiles.length)) throw new Error("surface wasm: tile buffer grow failed");
+        new Uint8Array(e.memory.buffer).set(tiles, e.tilesInPtr());
       }
       var mem = new Uint8Array(e.memory.buffer);
       mem.set(bytes, e.inputPtr());
@@ -93,7 +99,7 @@
         function (e) { self.postMessage({ id: msg.id, ok: false, error: errMsg(e) }); }
       );
     } else if (msg.type === "surface") {
-      generateSurface(msg.req).then(
+      generateSurface(msg.req, msg.tiles).then(
         function (r) {
           self.postMessage({ id: msg.id, ok: true, summary: r.summary, pixels: r.pixels }, [r.pixels.buffer]);
         },

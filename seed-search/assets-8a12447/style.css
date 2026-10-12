@@ -66,6 +66,11 @@ body {
    the track wider than the knob can travel) */
 .zone-card .dim-row input { flex: 1; max-width: 16em; padding: 0; border: 0; background: none; }
 .res-info { display: block; margin-top: 6px; }
+.zone-card .check-row { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; color: var(--muted); font-size: 0.9rem; }
+.zone-card .check-row label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: inherit; }
+.zone-card .check-row #sf-groups { display: contents; }
+.zone-card .check-row #sf-groups[hidden], .zone-card .check-row label[hidden] { display: none; }
+.zone-card .check-row[hidden] { display: none; }
 .surf-status:empty { display: none; }
 .surf-status { margin-bottom: 8px; }
 
