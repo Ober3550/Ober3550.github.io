@@ -138,6 +138,11 @@
   function nm(r) { return r.replace(/^se-/, "").replace(/^kr-/, "").replace(/-ore$/, ""); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
+  // the surface type pill, coloured by kind as on the seed page
+  function setBadge(t) {
+    els.badge.textContent = t;
+    els.badge.className = "badge zone-type" + (/^[a-z-]+$/.test(t) ? " zt-" + t : "");
+  }
   function status(msg) { els.status.textContent = msg || ""; }
   function setProgress(pct) {
     if (els.progress) {
@@ -546,7 +551,7 @@
   }
 
   function adaptForKind() {
-    els.badge.textContent = kind === "zone" ? "…" : "planet";
+    setBadge(kind === "zone" ? "…" : "planet");
     if (els.dimWrap) els.dimWrap.hidden = false;
     var lim = radiusLimits();
     els.radius.min = lim.min; els.radius.max = lim.max; els.radius.step = lim.step; els.radius.value = lim.value;
@@ -1271,7 +1276,7 @@
     if (r.kind === "error") { status(r.msg); return; }
     kind = r.kind;
     if (kind === "sa") planetKey = r.planetKey;
-    els.badge.textContent = "…";
+    setBadge("…");
     // ?layer=N optionally preselects the layer (terrain+ore 0 / terrain 1 / ore 2)
     try {
       var _ly = new URLSearchParams(location.search).get("layer");
@@ -1289,14 +1294,14 @@
     if (kind === "sa") {
       var p = PLANETS[planetKey];
       els.meta.innerHTML = '<span class="hint">default map settings</span>';
-      els.badge.textContent = "planet";
+      setBadge("planet");
     } else if (kind === "nauvis") {
       els.meta.innerHTML = '<span class="hint">default map settings</span>';
     } else {
       els.meta.innerHTML = '<span class="hint">resolving universe…</span>';
       fetchZone().then(function (z) {
         zone = z;
-        els.badge.textContent = z.t;
+        setBadge(z.t);
         els.meta.innerHTML = zoneMeta(z);
       }).catch(function (e) {
         status(e.message);

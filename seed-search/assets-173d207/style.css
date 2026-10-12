@@ -260,6 +260,9 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .badge.done { background: rgba(63,185,80,0.15); color: var(--green); }
 .badge.failed { background: rgba(248,81,73,0.15); color: var(--red); }
 .badge.zone-type { background: rgba(163,113,247,0.15); color: var(--purple); }
+/* by kind: planets green, moons blue; asteroid fields (and belts) keep the purple */
+.badge.zone-type.zt-planet { background: rgba(63,185,80,0.15); color: var(--green); }
+.badge.zone-type.zt-moon { background: rgba(88,166,255,0.15); color: var(--accent); }
 
 /* ── Zone Detail ────────────────────────────────────────────────────── */
 .zone-detail-grid {
@@ -738,3 +741,19 @@ a.btn-sm {
   /* the top seeds table keeps its columns and scrolls sideways */
   #featured table { min-width: 760px; }
 }
+
+/* Top seeds: a zone per need, five lines each (what it is for, zone, radius,
+   travel, enemies), labelled by the Zone column */
+.slot-lines { display: grid; grid-auto-rows: 20px; line-height: 20px; white-space: nowrap; }
+.slot-lines.labels { color: var(--muted); font-size: 0.85em; }
+.slot-lines a { color: var(--accent); font-weight: 600; }
+.slot-lines .none { color: var(--muted); }
+.enemy-none { color: #3fb950; } .enemy-low { color: #d4a72c; } .enemy-high { color: #f85149; }
+/* every zone column the same width, whatever its heading */
+#featured-head th.slot { width: 14em; min-width: 14em; box-sizing: border-box; }
+/* The table is as tall as its rows and scrolls with the page. Where the
+   window is narrower than its columns it scrolls sideways in its own box
+   (which is also where the heading stops following the page). */
+@media (max-width: 1180px) { .featured-scroll { overflow-x: auto; } }
+#featured-prod { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+#featured-prod label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
