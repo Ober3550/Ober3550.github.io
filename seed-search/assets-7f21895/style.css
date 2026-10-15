@@ -758,3 +758,8 @@ a.btn-sm {
 #featured-prod { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 #featured-prod label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .zone-card .download-row { flex-basis: 100%; }
+.zone-card .radius-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+.zone-card .radius-row label { font-size: inherit; display: inline-flex; align-items: center; gap: 10px; }
+.zone-card .radius-row[hidden] { display: none; }
+.zone-card .radius-row input { width: 7em; }
+.zone-card .radius-row input[readonly] { opacity: 0.75; cursor: default; }

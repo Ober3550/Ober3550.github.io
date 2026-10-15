@@ -214,6 +214,14 @@ fn multiOff(gi : u32, x : f32, y : f32, octaves : u32, persistence : f32,
     return value / sqrt(sumsq) * outs;
 }
 
+// The most a row's terrain-variation term, 0.5 * multiOff(6 octaves,
+// persistence 0.75, output 0.666), can add or take away: 0.5 * 0.666 *
+// (sum of octave amplitudes / their RMS = 2.2104) * (largest basis value:
+// gradients of length 4.2 times max over a noise cell of the four corners'
+// sum of |d| (1 - d^2)^3 = 0.42188) = 1.304, with a margin. Same bound as the
+// CPU classifier (biome.zig TV_BOUND).
+const TV_BOUND : f32 = 1.35;
+
 fn plateauPeak(v : f32, lo : f32, hi : f32) -> f32 {
     let range = abs(lo - hi) / 2.0;
     let center = (lo + hi) / 2.0;
@@ -226,8 +234,12 @@ fn classifierColor(x : f32, y : f32, t : f32, m : f32, a : f32, e : f32) -> u32 
     let water_noise = multiOff(GI_WATER, x, y, 5u, 0.75, 1.0 / 6.0 / 8.0, 0.666, 0.0, 0.0);
     let crater_noise = multiOff(GI_CRATER, x, y, 5u, 0.75, 1.0 / 6.0, 0.666, 0.0, 0.0);
     let beach = min(0.0, e / 5.0 - 1.0);
-    var best : f32 = -3.0e38;
-    var col : u32 = 0u;
+    // Each row's fitness before its terrain-variation noise, and the highest
+    // of them less TV_BOUND: some row reaches at least that. A row that
+    // cannot reach it cannot win, so its noise is never computed - the same
+    // winner as evaluating every row.
+    var pre : array<f32, 156>;
+    var floor_best : f32 = -3.0e38;
     for (var r : u32 = 0u; r < 156u; r = r + 1u) {
         let base = r * 12u;
         var f : f32 = 1.0e38;
@@ -240,7 +252,14 @@ fn classifierColor(x : f32, y : f32, t : f32, m : f32, a : f32, e : f32) -> u32 
         let wc = rowsF[base + 9u];
         if (wc != 0.0) { f = f + wc * water_noise; }
         if ((fl & 16u) != 0u) { f = f + (-0.6 - 0.7 * crater_noise); }
-        f = f + 0.5 * multiOff(GI_TV + r, x, y, 6u, 0.75, 1.0 / 6.0 / 4.0, 0.666, 1000.0, 0.0);
+        pre[r] = f;
+        floor_best = max(floor_best, f - TV_BOUND);
+    }
+    var best : f32 = -3.0e38;
+    var col : u32 = 0u;
+    for (var r : u32 = 0u; r < 156u; r = r + 1u) {
+        if (pre[r] + TV_BOUND < floor_best) { continue; }
+        let f = pre[r] + 0.5 * multiOff(GI_TV + r, x, y, 6u, 0.75, 1.0 / 6.0 / 4.0, 0.666, 1000.0, 0.0);
         if (f > best) { best = f; col = rowsU[r * 2u + 1u]; }
     }
     return col;

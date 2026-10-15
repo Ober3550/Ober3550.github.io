@@ -432,8 +432,15 @@
   }
 
   function generate() {
-    var seedVal = parseInt(document.getElementById("seed-input").value, 10);
-    if (!Number.isFinite(seedVal) || seedVal < 0) return;
+    // a pasted seed often comes with spaces, separators or a label: keep the
+    // digits only (the field is plain text so the browser does not reject it)
+    var input = document.getElementById("seed-input");
+    var digits = String(input.value || "").replace(/[^0-9]/g, "");
+    input.value = digits;
+    var seedVal = digits ? parseInt(digits, 10) : NaN;
+    var genStatus = document.getElementById("gen-status");
+    if (!Number.isFinite(seedVal)) { if (genStatus) genStatus.textContent = "enter a seed number"; return; }
+    if (seedVal > 4294967295) { if (genStatus) genStatus.textContent = "a map seed is at most 4294967295"; return; }
     state.seed = seedVal;
     syncUrl();
     var status = document.getElementById("gen-status");
