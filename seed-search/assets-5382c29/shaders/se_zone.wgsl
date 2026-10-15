@@ -8,7 +8,8 @@
 //   0 (map_seed,900) 1 (map_seed,99584) 2 (map_seed,700) 3 (map_seed,1000)
 //   4 (map_seed,1100) 5 (map_seed,500) 6 (map_seed,600)
 // Modes: 0 elevation (outF = f32 e), 1 water mask (outIdx: 0 land 1 water
-// 2 deep), 2 reserved.
+// 2 deep), 2..4 temperature / moisture / aux, 5 packed colour 0xRRGGBB,
+// 6 canvas pixels (outIdx = RGBA bytes, transparent off the disk).
 
 struct Params {
     origin_x : f32,
@@ -40,6 +41,7 @@ struct Params {
     width : u32,
     height : u32,
     mode : u32,
+    disk_r : i32,
 };
 
 @group(0) @binding(0) var<uniform>             P     : Params;
@@ -51,6 +53,18 @@ struct Params {
 @group(0) @binding(6) var<storage, read_write> outIdx: array<u32>;
 @group(0) @binding(7) var<storage, read>       rowsF : array<f32, 1872>; // 156 rows x 12
 @group(0) @binding(8) var<storage, read>       rowsU : array<u32, 312>;  // flags,color
+
+// A packed 0xRRGGBB colour as the bytes R, G, B, A of a canvas pixel (u32,
+// little-endian), with alpha `a`.
+fn rgbaOf(c : u32, a : u32) -> u32 {
+    return ((c >> 16u) & 255u) | (((c >> 8u) & 255u) << 8u) | ((c & 255u) << 16u) | (a << 24u);
+}
+// Is the tile at map (x, y) on the surface's disk (radius P.disk_r)?
+fn onDisk(x : f32, y : f32) -> bool {
+    let xi = i32(x);
+    let yi = i32(y);
+    return xi * xi + yi * yi <= P.disk_r * P.disk_r;
+}
 
 const GI_HILLS : u32 = 0u;
 const GI_CLIFF : u32 = 1u;
@@ -272,16 +286,20 @@ fn main(@builtin(global_invocation_id) gid : vec3<u32>) {
     let y = P.origin_y + f32(gid.y);
     let i = gid.y * P.width + gid.x;
     let has_water = P.water_gate > 0.5;
+    // (off the disk: transparent, and nothing to work out)
+    if (P.mode == 6u && !onDisk(x, y)) { outIdx[i] = 0u; return; }
     // (a surface without water tiles still has its elevation: the land
     // tiles' own rules read it)
     let e = elevationAt(x, y);
-    if (P.mode == 5u) {
+    if (P.mode == 5u || P.mode == 6u) {
+        var c : u32;
         if (has_water && e < 0.0) {
-            if (e < -5.0) { outIdx[i] = 0x00264049u; } // deepwater
-            else { outIdx[i] = 0x0033535Fu; }          // water
-            return;
+            if (e < -5.0) { c = 0x00264049u; } // deepwater
+            else { c = 0x0033535Fu; }          // water
+        } else {
+            c = classifierColor(x, y, temperatureAt(x, y), moistureAt(x, y), auxAt(x, y), e);
         }
-        outIdx[i] = classifierColor(x, y, temperatureAt(x, y), moistureAt(x, y), auxAt(x, y), e);
+        if (P.mode == 6u) { outIdx[i] = rgbaOf(c, 255u); } else { outIdx[i] = c; }
         return;
     }
     if (P.mode == 0u) { outF[i] = e; return; }

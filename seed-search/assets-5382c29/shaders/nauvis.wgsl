@@ -9,6 +9,8 @@
 //
 // Modes: 0 elevation (outF = f32 e) | 1 fields (outF = aux, outF2 = m)
 //        2 tiles (outIdx = palette index: 0 water, 1 deepwater, 2..20 land)
+//        3 canvas pixels (outIdx = RGBA bytes of the tile's map colour,
+//          transparent off the disk)
 
 struct Params {
     origin_x : f32,
@@ -34,6 +36,7 @@ struct Params {
     width : u32,
     height : u32,
     mode : u32,
+    disk_r : i32,
 };
 
 @group(0) @binding(0) var<uniform>             P      : Params;
@@ -61,6 +64,25 @@ const GI_SLK   : u32 = 16u;  // lake quick, octave k -> (map_seed+k, 14)
 const GI_T0    : u32 = 20u;  // 19 land-tile noise gens (seeds 36,37,38,13,6..12,19..22,30..33)
 
 const NLAND : u32 = 19u;
+
+// map colours of the palette (biome.zig nauvis_base_palette order, as
+// gpu-surface.js NAUVIS_COLORS)
+const PALETTE = array<u32, 21>(
+    0x33535Fu, 0x264049u, 0x8A673Au, 0x805D34u, 0x73532Fu, 0x5E4225u, 0x8D683Cu,
+    0x88603Bu, 0x855C35u, 0x67482Bu, 0x5B3F26u, 0x50371Fu, 0x50361Cu, 0x37350Bu,
+    0x42390Fu, 0x41341Cu, 0x3B2812u, 0x674620u, 0x745127u, 0x74542Bu, 0x805D34u);
+
+// A packed 0xRRGGBB colour as the bytes R, G, B, A of a canvas pixel (u32,
+// little-endian), with alpha `a`.
+fn rgbaOf(c : u32, a : u32) -> u32 {
+    return ((c >> 16u) & 255u) | (((c >> 8u) & 255u) << 8u) | ((c & 255u) << 16u) | (a << 24u);
+}
+// Is the tile at map (x, y) on the surface's disk (radius P.disk_r)?
+fn onDisk(x : f32, y : f32) -> bool {
+    let xi = i32(x);
+    let yi = i32(y);
+    return xi * xi + yi * yi <= P.disk_r * P.disk_r;
+}
 
 // The most a land tile's noise_layer term, multioctave (4 octaves,
 // persistence 0.7) * 2/3, can add or take away: 2/3 * (sum of octave
@@ -233,6 +255,8 @@ fn main(@builtin(global_invocation_id) gid : vec3<u32>) {
     let x = P.origin_x + f32(gid.x);
     let y = P.origin_y + f32(gid.y);
     let i = gid.y * P.width + gid.x;
+    // (off the disk: transparent, and nothing to work out)
+    if (P.mode == 3u && !onDisk(x, y)) { outIdx[i] = 0u; return; }
     let d = sqrt((x - P.lake_x) * (x - P.lake_x) + (y - P.lake_y) * (y - P.lake_y));
     // lake noise (quick 4 oct, is 1/64 -> *2, os 6.4 -> *0.68)
     var ln : f32 = 0.0;
@@ -271,5 +295,6 @@ fn main(@builtin(global_invocation_id) gid : vec3<u32>) {
         let p = pre[t] + multioctaveG(GI_T0 + t, x, y, 4u, 1.0 / 0.7, 1.0 / 6.0) * (2.0 / 3.0);
         if (p > best) { best = p; bestIdx = 2u + t; }
     }
+    if (P.mode == 3u) { outIdx[i] = rgbaOf(PALETTE[bestIdx], 255u); return; }
     outIdx[i] = bestIdx;
 }

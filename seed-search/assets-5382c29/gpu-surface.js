@@ -93,7 +93,8 @@
   }
 
   // Colour a cell's pixels: tiles -> palette indices -> RGBA; the classifier
-  // and field kernels already return packed 0xRRGGBB colours.
+  // and field kernels already return packed 0xRRGGBB colours. (The "-rgba"
+  // kinds come back as finished pixels and skip this.)
   function cellRgba(kind, px, w, h) {
     if (kind === "tiles") return window.gpuIndicesToRgba(px, w, h);
     var packed = new Uint32Array(px);
@@ -121,6 +122,10 @@
     }
   }
 
+  // Up to DEPTH cells are asked for at once, so the worker always has the
+  // next dispatch queued while a cell is read back and drawn; they are handed
+  // to onCell in order.
+  var DEPTH = 4;
   window.generateSurfaceProgressive = function (req) {
     var R = req.radius, diskR = req.diskR || R, cell = req.cell || 512;
     // (the page passes its own cells, { xa, ya, xb, yb, src }, so every pass
@@ -128,22 +133,36 @@
     var cells = req.cells || diskPlan(R, diskR, cell);
     var offset = R; // canvas index of map coord 0
     var onCell = req.onCell || null;
-    function step(i) {
-      if (i >= cells.length) return Promise.resolve(cells.length);
-      var c = cells[i];
-      var w = c.xb - c.xa;
-      var h = c.yb - c.ya;
-      return window.generateSurfaceGPU({
-        seed: req.seed, kind: req.kind, zone: req.zone || null,
-        rect: { x0: c.xa, y0: c.ya, x1: c.xb, y1: c.yb }
-      }).then(function (r) {
-        var rgba = cellRgba(req.kind, r.pixels, w, h);
-        maskCell(rgba, w, h, diskR, c.xa, c.ya);
-        if (onCell) onCell({ x: c.xa + offset, y: c.ya + offset, w: w, h: h, rgba: rgba, done: i + 1, total: cells.length, src: c.src });
-        return step(i + 1);
+    var finished = /-rgba$/.test(req.kind);
+    var inflight = [], next = 0;
+    function ask() {
+      while (next < cells.length && inflight.length < DEPTH) {
+        var c = cells[next++];
+        inflight.push({ c: c, p: window.generateSurfaceGPU({
+          seed: req.seed, kind: req.kind, zone: req.zone || null, diskR: diskR,
+          rect: { x0: c.xa, y0: c.ya, x1: c.xb, y1: c.yb }
+        }) });
+      }
+    }
+    var done = 0;
+    function step() {
+      ask();
+      if (!inflight.length) return Promise.resolve(cells.length);
+      var f = inflight.shift();
+      return f.p.then(function (r) {
+        ask();
+        var c = f.c, w = c.xb - c.xa, h = c.yb - c.ya;
+        var rgba = r.pixels;
+        if (!finished) {
+          rgba = cellRgba(req.kind, r.pixels, w, h);
+          maskCell(rgba, w, h, diskR, c.xa, c.ya);
+        }
+        done++;
+        if (onCell) onCell({ x: c.xa + offset, y: c.ya + offset, w: w, h: h, rgba: rgba, done: done, total: cells.length, src: c.src });
+        return step();
       });
     }
-    return step(0);
+    return step();
   };
 
   // Whole-buffer helpers (kept for callers that want the final RGBA square;

@@ -184,26 +184,29 @@ function rulesStorage(dev) {
   return rulesBuf;
 }
 
-async function runNauvis(mapSeed, rect, mode) {
-  const ctx = await nauvisPipeline();
-  const dev = ctx.dev;
+// nauvis.wgsl Params: 20 f32, then width, height, mode, disk_r (96 bytes)
+function nauvisUniform(mapSeed, rect, mode, diskR) {
   const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
-  const uniSize = 96; // 20 f32 + 3 u32 padded to 16
-  const uni = dev.createBuffer({ size: uniSize, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-  const p = new Float32Array(20);
   const nsm = 1.5;
   const vals = [rect.x0, rect.y0, nsm, 1.0, 0, nsm / 90, nsm / 500, 0.6, nsm / 150,
     nsm / 1600, nsm / 1600, nsm / 14, 0.03, 10000 / nsm, nsm / 2,
     ((1 - 0.7) / Math.pow(2, 5) / (1 - Math.pow(0.7, 5))) * 0.5, 10000 / nsm, 0, 0, 0];
   const lc = lakeCentre(mapSeed);
   vals[17] = lc[0]; vals[18] = lc[1];
-  for (let i = 0; i < 20; i++) p[i] = vals[i];
-  const dv = new DataView(uniSize === 96 ? new ArrayBuffer(uniSize) : null);
-  // write float part via Float32 view, u32s at the tail
-  const arr = new ArrayBuffer(uniSize);
-  new Float32Array(arr).set(p, 0);
+  const arr = new ArrayBuffer(96);
+  new Float32Array(arr).set(vals, 0);
   const d = new DataView(arr);
   d.setUint32(80, w, true); d.setUint32(84, h, true); d.setUint32(88, mode, true);
+  d.setInt32(92, diskR || 0, true);
+  return arr;
+}
+
+async function runNauvis(mapSeed, rect, mode) {
+  const ctx = await nauvisPipeline();
+  const dev = ctx.dev;
+  const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
+  const arr = nauvisUniform(mapSeed, rect, mode, 0);
+  const uni = dev.createBuffer({ size: arr.byteLength, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   dev.queue.writeBuffer(uni, 0, arr);
 
   const t = uploadTables(dev, mapSeed);
@@ -352,23 +355,20 @@ function seRowsFor(dev) {
 
 // Run se_zone.wgsl elevation (mode 0) or water mask (mode 1) for an SE zone.
 // `zone` = universe row; cpu params come from surface.wasm (surfaceParams).
-async function runSEZone(mapSeed, zone, rect, mode) {
-  const cp = await cpuSurfaceParams({ seed: mapSeed, k2: !!zone.k2, zone });
-  if (!cp.ok) throw new Error(cp.error || "surfaceParams failed");
-  const ctx = await sePipeline();
-  const dev = ctx.dev;
+// se_zone.wgsl Params: 26 f32, then width, height, mode, disk_r (120 bytes,
+// in a 128-byte buffer)
+function seUniform(cp, zone, rect, mode, diskR) {
   const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
   const nsm = 1.5 * cp.water_frequency;
   const seg = cp.water_frequency;
   const waterLevel = 10 * Math.log2(cp.water_size);
   const osPers = ((1 - 0.7) / Math.pow(2, 5) / (1 - Math.pow(0.7, 5))) * 0.5;
-  // uniform: 26 floats then width/height/mode u32s (116 bytes)
   const tags = (zone && zone.tags) || {};
   const wtag = (zone && zone.water) || tags.water || "";
   // the CPU renderer's own verdict when it gives one (Nauvis always has
   // water, whatever the row's tag says); the tag otherwise
   const hasWater = typeof cp.has_water === "boolean" ? cp.has_water : (wtag.length > 0 && wtag !== "none");
-  const arr = new ArrayBuffer(116);
+  const arr = new ArrayBuffer(128);
   const f = new Float32Array(arr);
   const v = [rect.x0, rect.y0, nsm, seg, waterLevel,
     nsm / 90, nsm / 500, 0.6, nsm / 150, nsm / 1600, nsm / 1600,
@@ -379,7 +379,33 @@ async function runSEZone(mapSeed, zone, rect, mode) {
   for (let i = 0; i < 26; i++) f[i] = v[i];
   const d = new DataView(arr);
   d.setUint32(104, w, true); d.setUint32(108, h, true); d.setUint32(112, mode, true);
-  const uni = dev.createBuffer({ size: 116, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  d.setInt32(116, diskR || 0, true);
+  return arr;
+}
+
+// surfaceParams for a zone, kept for the zone last asked for (a render is
+// many cells of one zone)
+let seParamsKey = null, seParamsP = null;
+function seParams(mapSeed, zone) {
+  const key = mapSeed + "|" + JSON.stringify(zone);
+  if (key !== seParamsKey) {
+    seParamsKey = key;
+    seParamsP = cpuSurfaceParams({ seed: mapSeed, k2: !!zone.k2, zone }).then((cp) => {
+      if (!cp.ok) throw new Error(cp.error || "surfaceParams failed");
+      return cp;
+    });
+    seParamsP.catch(() => { if (seParamsKey === key) seParamsKey = null; });
+  }
+  return seParamsP;
+}
+
+async function runSEZone(mapSeed, zone, rect, mode) {
+  const cp = await seParams(mapSeed, zone);
+  const ctx = await sePipeline();
+  const dev = ctx.dev;
+  const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
+  const arr = seUniform(cp, zone, rect, mode, 0);
+  const uni = dev.createBuffer({ size: arr.byteLength, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   dev.queue.writeBuffer(uni, 0, arr);
 
   const t = seTablesFor(dev, cp.zone_seed);
@@ -419,6 +445,83 @@ async function runSEZone(mapSeed, zone, rect, mode) {
   const elev = await readbackFloat(dev, rB, w * h);
   const idx = await readbackU32(dev, rI, w * h);
   return { elev, idx, width: w, height: h };
+}
+
+// ── Finished pixels, pipelined ────────────────────────────────────────────
+// kind "tiles-rgba" | "se-rgba" | "field-rgba": the kernel writes the canvas
+// pixels itself (RGBA bytes, transparent off the disk of radius req.diskR).
+// submitRgba encodes the dispatch and the copy to a readback buffer in one
+// submission and resolves as soon as that is queued, with `done` (the
+// pixels, once mapped): the next request is submitted while this one is
+// still being read back, so the GPU always has work queued.
+const RGBA_MODE = { "tiles-rgba": 3, "se-rgba": 6, "field-rgba": 2 };
+// bound to the kernels' outputs this mode never writes (one each: writable
+// bindings may not alias)
+const unusedBufs = [];
+function unused(dev, k) {
+  if (!unusedBufs[k]) unusedBufs[k] = dev.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE });
+  return unusedBufs[k];
+}
+
+async function submitRgba(req) {
+  const rect = req.rect;
+  const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
+  const mode = RGBA_MODE[req.kind];
+  const diskR = Math.round(req.diskR);
+  let ctx, arr, tables;
+  if (req.kind === "tiles-rgba") {
+    ctx = await nauvisPipeline();
+    arr = nauvisUniform(req.seed >>> 0, rect, mode, diskR);
+  } else if (req.kind === "se-rgba") {
+    const cp = await seParams(req.seed >>> 0, req.zone);
+    ctx = await sePipeline();
+    arr = seUniform(cp, req.zone, rect, mode, diskR);
+    tables = seTablesFor(ctx.dev, cp.zone_seed);
+  } else {
+    ctx = await fieldPipeline();
+    arr = fieldUniform(rect, mode, diskR);
+    tables = fieldTablesFor(ctx.dev, req.seed >>> 0);
+  }
+  const dev = ctx.dev;
+  const size = w * h * 4;
+  const uni = dev.createBuffer({ size: arr.byteLength, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  dev.queue.writeBuffer(uni, 0, arr);
+  const out = dev.createBuffer({ size, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+  const read = dev.createBuffer({ size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+  const buf = (b) => ({ buffer: b });
+  let entries;
+  if (req.kind === "tiles-rgba") {
+    const t = uploadTables(dev, req.seed >>> 0);
+    entries = [uni, t.perm1, t.perm2, t.grad, t.sb, rulesStorage(dev), unused(dev, 0), unused(dev, 1), out];
+  } else if (req.kind === "se-rgba") {
+    const rows = seRowsFor(dev);
+    entries = [uni, tables.perm1, tables.perm2, tables.grad, tables.sb, unused(dev, 0), out, rows.bufF, rows.bufU];
+  } else {
+    entries = [uni, tables.perm1, tables.perm2, tables.grad, tables.sb, out];
+  }
+  const bind = dev.createBindGroup({
+    layout: ctx.pipeline.getBindGroupLayout(0),
+    entries: entries.map((b, i) => ({ binding: i, resource: buf(b) })),
+  });
+  const enc = dev.createCommandEncoder();
+  const pass = enc.beginComputePass();
+  pass.setPipeline(ctx.pipeline);
+  pass.setBindGroup(0, bind);
+  pass.dispatchWorkgroups(Math.ceil(w / 8), Math.ceil(h / 8));
+  pass.end();
+  enc.copyBufferToBuffer(out, 0, read, 0, size);
+  dev.pushErrorScope("validation");
+  dev.queue.submit([enc.finish()]);
+  const errP = dev.popErrorScope();
+  const mapP = read.mapAsync(GPUMapMode.READ);
+  const done = Promise.all([errP, mapP.catch((e) => e)]).then(([verr, m]) => {
+    if (verr) throw new Error("gpu validation: " + verr.message);
+    if (m instanceof Error) throw m;
+    const px = new Uint8Array(read.getMappedRange().slice(0));
+    read.unmap();
+    return px;
+  }).finally(() => { read.destroy(); out.destroy(); uni.destroy(); });
+  return { done, w, h };
 }
 
 async function handleMsg(ev) {
@@ -491,7 +594,24 @@ async function handleMsg(ev) {
 var _msgQueue = Promise.resolve();
 self.onmessage = function (ev) {
   if (!ev.data || ev.data.id == null) return;
-  var _id = ev.data.id;
+  var msg = ev.data;
+  var req = msg.req || {};
+  if (msg.type === "gpu-surface" && RGBA_MODE[req.kind] != null) {
+    // (held only until the work is submitted: the readback runs alongside
+    // the next request's submission)
+    _msgQueue = _msgQueue.then(function () {
+      return submitRgba(req).then(function (s) {
+        s.done.then(function (px) {
+          self.postMessage({ id: msg.id, ok: true, summary: { kind: req.kind, width: s.w, height: s.h }, pixels: px }, [px.buffer]);
+        }, function (e) {
+          self.postMessage({ id: msg.id, ok: false, error: (e && e.message) || String(e) });
+        });
+      }, function (e) {
+        self.postMessage({ id: msg.id, ok: false, error: (e && e.message) || String(e) });
+      });
+    });
+    return;
+  }
   _msgQueue = _msgQueue.then(function () { return handleMsg(ev); }).catch(function () {});
 };
 
@@ -555,17 +675,25 @@ function fieldTablesFor(dev, zoneSeed) {
   return fieldTables;
 }
 
-async function runFieldZone(zoneSeed, rect, mode) {
-  const ctx = await fieldPipeline();
-  const dev = ctx.dev;
+// se_field.wgsl FParams: origin_x, origin_y, planetR f32, then width,
+// height, mode, disk_r (28 bytes, in a 32-byte buffer)
+function fieldUniform(rect, mode, diskR) {
   const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
-  // uniform: origin_x, origin_y, planetR f32 + width/height/mode u32 (32 B)
   const arr = new ArrayBuffer(32);
   const f = new Float32Array(arr);
   f[0] = rect.x0; f[1] = rect.y0;
   f[2] = (10000.0 / 6.0) * (6.0 + Math.log2(1000.0 / 6.0)); // field planet_radius
   const d = new DataView(arr);
   d.setUint32(12, w, true); d.setUint32(16, h, true); d.setUint32(20, mode, true);
+  d.setInt32(24, diskR || 0, true);
+  return arr;
+}
+
+async function runFieldZone(zoneSeed, rect, mode) {
+  const ctx = await fieldPipeline();
+  const dev = ctx.dev;
+  const w = rect.x1 - rect.x0, h = rect.y1 - rect.y0;
+  const arr = fieldUniform(rect, mode, 0);
   const uni = dev.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   dev.queue.writeBuffer(uni, 0, arr);
 

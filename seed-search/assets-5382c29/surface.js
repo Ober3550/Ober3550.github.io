@@ -660,21 +660,50 @@
   // canvases: the trees onto the tree canvas, everything else onto the entity
   // canvas. Drawn over what is there - an entity on a cell's edge reaches
   // into the next cell, whose own transparent pixels must not erase it.
+  //
+  // While a group of the upper canvas is hidden, the cell is also drawn onto
+  // the filtered view without that group's pixels - sorted here from the
+  // cell's own pixels, not read back from the canvas (reading a large canvas
+  // back once per cell was most of an SE Nauvis render).
+  var groupOfColor = {};  // r,g,b -> group (nearest entity colour)
+  function groupOf(r, g, b) {
+    var key = (r << 16) | (g << 8) | b;
+    var hit = groupOfColor[key];
+    if (hit !== undefined) return hit;
+    var best = null, bd = Infinity;
+    Object.keys(ENTITY_GROUPS).forEach(function (gr) {
+      ENTITY_GROUPS[gr].forEach(function (c) {
+        var d = (r - c[0]) * (r - c[0]) + (g - c[1]) * (g - c[1]) + (b - c[2]) * (b - c[2]);
+        if (d < bd) { bd = d; best = gr; }
+      });
+    });
+    groupOfColor[key] = best;
+    return best;
+  }
   function drawEntityCell(px, w, h, dx, dy, dw, dh) {
-    var low = new Uint8ClampedArray(w * h * 4), up = new Uint8ClampedArray(w * h * 4);
-    var anyLow = false, anyUp = false, cols = [];
+    var n = w * h * 4;
+    var low = new Uint8ClampedArray(n), up = new Uint8ClampedArray(n);
+    var off = entityViewEl ? hiddenUpper() : [];
+    var vis = off.length ? new Uint8ClampedArray(n) : null;
+    var anyLow = false, anyUp = false, anyVis = false, cols = [];
     LOWER_GROUPS.forEach(function (g) { ENTITY_GROUPS[g].forEach(function (c) { cols.push(c); }); });
-    for (var i = 0; i < w * h * 4; i += 4) {
+    for (var i = 0; i < n; i += 4) {
       if (!px[i + 3]) continue;
+      // (the lower canvas takes its groups' exact colours only)
       var isLow = false;
       for (var k = 0; k < cols.length; k++) {
         if (px[i] === cols[k][0] && px[i + 1] === cols[k][1] && px[i + 2] === cols[k][2]) { isLow = true; break; }
       }
       var t = isLow ? low : up;
       t[i] = px[i]; t[i + 1] = px[i + 1]; t[i + 2] = px[i + 2]; t[i + 3] = px[i + 3];
-      if (isLow) anyLow = true; else anyUp = true;
+      if (isLow) { anyLow = true; continue; }
+      anyUp = true;
+      if (vis && off.indexOf(groupOf(px[i], px[i + 1], px[i + 2])) === -1) {
+        vis[i] = px[i]; vis[i + 1] = px[i + 1]; vis[i + 2] = px[i + 2]; vis[i + 3] = px[i + 3];
+        anyVis = true;
+      }
     }
-    [[up, enemyOverlayEl, anyUp], [low, treeEl, anyLow]].forEach(function (job) {
+    [[up, enemyOverlayEl, anyUp], [low, treeEl, anyLow], [vis, entityViewEl, anyVis]].forEach(function (job) {
       if (!job[2] || !job[1]) return;
       var cx = cellCanvas(w, h);
       cx.putImageData(new ImageData(job[0], w, h), 0, 0);
@@ -682,7 +711,6 @@
       ctx.imageSmoothingEnabled = dw !== w;
       ctx.drawImage(cellCv, 0, 0, w, h, dx, dy, dw, dh);
     });
-    if (anyUp) entitiesDrawn(dx, dy, dw, dh);
   }
   // Copy a rect of the entity canvas to the filtered view without the
   // hidden groups (a pixel belongs to the group whose colour it is nearest,
@@ -727,13 +755,7 @@
     enemyOverlayEl.style.display = "none";
     filterEntities(0, 0, enemyOverlayEl.width, enemyOverlayEl.height, off);
   }
-  // after new entities were drawn into a rect: bring the filtered view up to date
-  function entitiesDrawn(x, y, w, h) {
-    if (!entityViewEl || !enemyOverlayEl) return;
-    x = Math.max(0, Math.floor(x)); y = Math.max(0, Math.floor(y));
-    w = Math.min(enemyOverlayEl.width - x, Math.ceil(w) + 1); h = Math.min(enemyOverlayEl.height - y, Math.ceil(h) + 1);
-    if (w > 0 && h > 0) filterEntities(x, y, w, h, hiddenUpper());
-  }
+
   // Does this SE surface have enemies to map? (Nauvis always; a zone by its
   // enemy tag; never an asteroid field.)
   function zoneHasEnemies(z) {
@@ -1179,11 +1201,12 @@
         // Nauvis: base-game tiles, except under Space Exploration, where the
         // ground is alien-biomes like every other SE surface
         var seNauvis = kind === "nauvis" && (MOD === "se" || MOD === "k2se");
-        if (kind === "nauvis" && !seNauvis) { gpuKind = "tiles"; backend = "nauvis-tiles"; label = "nauvis tiles"; }
-        else if (z.t === "asteroid-field") { gpuKind = "field-color"; backend = "se-field"; label = "asteroid field"; }
-        else { gpuKind = "se-color"; backend = "se-alien-biomes"; label = "alien biomes"; }
+        // (the kernels write finished canvas pixels, transparent off the disk)
+        if (kind === "nauvis" && !seNauvis) { gpuKind = "tiles-rgba"; backend = "nauvis-tiles"; label = "nauvis tiles"; }
+        else if (z.t === "asteroid-field") { gpuKind = "field-rgba"; backend = "se-field"; label = "asteroid field"; }
+        else { gpuKind = "se-rgba"; backend = "se-alien-biomes"; label = "alien biomes"; }
         // field kernel seeds its billows gen with the ZONE's map seed
-        var seed = gpuKind === "field-color" && z.s != null ? z.s : SEED;
+        var seed = gpuKind === "field-rgba" && z.s != null ? z.s : SEED;
 
         // The alien-biomes kernel has no starting lake, but every surface
         // with water has one. The lake sits within ~105 tiles of spawn, so
@@ -1242,16 +1265,14 @@
           seed: seed, zone: z, kind: gpuKind, radius: R, diskR: diskR,
           cells: order.map(function (b) { return { xa: b.xa, ya: b.ya, xb: b.xb, yb: b.yb, src: b }; }),
           onCell: function (g) {
+            // (the pixels are the canvas's own bytes: no copy)
+            var gimg = new ImageData(new Uint8ClampedArray(g.rgba.buffer, g.rgba.byteOffset, g.w * g.h * 4), g.w, g.h);
             if (full) {
-              var img = tctx.createImageData(g.w, g.h);
-              img.data.set(g.rgba);
-              tctx.putImageData(img, g.x, g.y);
+              tctx.putImageData(gimg, g.x, g.y);
             } else {
               // downscale: draw the cell through an offscreen canvas
               var cx = cellCanvas(g.w, g.h);
-              var cimg = cx.createImageData(g.w, g.h);
-              cimg.data.set(g.rgba);
-              cx.putImageData(cimg, 0, 0);
+              cx.putImageData(gimg, 0, 0);
               tctx.imageSmoothingEnabled = true;
               tctx.drawImage(cellCv, 0, 0, g.w, g.h, g.x / scaleS, g.y / scaleS, g.w / scaleS, g.h / scaleS);
             }
