@@ -43,7 +43,10 @@
             ctx.fillStyle = "#f00";
             ctx.fillRect(1, 1, 2, 2);
             var px = ctx.getImageData(2, 2, 1, 1).data;
-            return px[0] === 255 && px[3] === 255;
+            // (not exactly 255: Brave's fingerprinting protection nudges
+            // what a page reads back from a canvas; a canvas past the limit
+            // reads back nothing at all)
+            return px[0] > 200 && px[1] < 60 && px[3] > 200;
           } catch (e) { return false; }
         }
         // doubling scan (max disk we ever display is 20000 = 2*r10000), then
@@ -155,29 +158,46 @@
 
   // ── Worker pool ───────────────────────────────────────────────────────────
   var pool = null;
-  var pending = {};   // id -> { resolve, reject }
+  var pending = {};   // id -> { resolve, reject, lane }
   var queue = [];     // [{ id, type, req, resolve, reject }]
-  // Ore cells wait in a lane of their own and take at most half the workers
-  // while terrain cells are waiting, so neither starves the other; whichever
-  // lane is empty gives its workers to the other.
+  // Ore cells wait in a lane of their own and take at most half the job
+  // slots while terrain cells are waiting, so neither starves the other;
+  // whichever lane is empty gives its slots to the other.
   var oreQueue = [];
   var oreBusy = 0;
+  // Jobs a worker holds at once: the next one is already with it when it
+  // finishes one, so it does not sit idle while its reply travels to the
+  // page and the page sends the next (~9 ms a job, a tenth of an SE Nauvis
+  // render with one at a time).
+  var DEPTH = 2;
 
   var nextId = 1;
 
   function nextJob() {
-    var oreCap = Math.max(1, pool.length >> 1);
+    var oreCap = Math.max(1, (pool.length * DEPTH) >> 1);
     if (oreQueue.length && (!queue.length || oreBusy < oreCap)) return oreQueue.shift();
     if (queue.length) return queue.shift();
     return null;
   }
   function startJob(worker, j) {
-    worker.idle = false;
-    worker.ore = j.lane === "ore";
-    if (worker.ore) oreBusy++;
-    pending[j.id] = { resolve: j.resolve, reject: j.reject };
+    worker.jobs++;
+    if (j.lane === "ore") oreBusy++;
+    pending[j.id] = { resolve: j.resolve, reject: j.reject, lane: j.lane };
     if (j.tiles) worker.postMessage({ id: j.id, type: j.type, req: j.req, tiles: j.tiles }, [j.tiles.buffer]);
     else worker.postMessage({ id: j.id, type: j.type, req: j.req });
+  }
+  // hand out waiting jobs, the least busy worker first
+  function fill() {
+    for (;;) {
+      var best = null;
+      for (var i = 0; i < pool.length; i++) {
+        if (pool[i].jobs < DEPTH && (!best || pool[i].jobs < best.jobs)) best = pool[i];
+      }
+      if (!best) return;
+      var j = nextJob();
+      if (!j) return;
+      startJob(best, j);
+    }
   }
 
   function spawnPool() {
@@ -187,19 +207,19 @@
     try { n = Math.max(1, Math.min(navigator.hardwareConcurrency || 4, 16)); } catch (e) {}
     for (var i = 0; i < n; i++) {
       var w = new Worker(window.Shell.asset("gen-worker.js"));
-      w.idle = true;
+      w.jobs = 0;
       (function (worker) {
         worker.onmessage = function (ev) {
           var m = ev.data;
           var p = pending[m.id];
           if (!p) return;
           delete pending[m.id];
-          if (worker.ore) { worker.ore = false; oreBusy--; }
+          worker.jobs--;
+          if (p.lane === "ore") oreBusy--;
+          // (the next job goes out before this one's result is drawn)
+          fill();
           if (m.ok) p.resolve({ summary: m.summary, pixels: m.pixels });
           else p.reject(new Error(m.error || "surface call failed"));
-          var j = nextJob();
-          if (j) startJob(worker, j);
-          else worker.idle = true;
         };
       })(w);
       pool.push(w);
@@ -211,12 +231,7 @@
     type = type || "surface";
     return new Promise(function (resolve, reject) {
       (lane === "ore" ? oreQueue : queue).push({ id: nextId++, type: type, req: req, lane: lane, tiles: tiles, resolve: resolve, reject: reject });
-      for (var i = 0; i < pool.length; i++) {
-        if (!pool[i].idle) continue;
-        var j = nextJob();
-        if (!j) break;
-        startJob(pool[i], j);
-      }
+      fill();
     });
   }
 
@@ -273,6 +288,31 @@
     return cells;
   }
 
+  // The cell `c`'s pixels (RGBA, one per tile) out of a buffer whose top-left
+  // tile is (sx0, sy0) and which is `sw` tiles wide.
+  function cutRect(src, sx0, sy0, sw, c) {
+    var w = c.x1 - c.x0, h = c.y1 - c.y0, out = new Uint8Array(w * h * 4);
+    for (var row = 0; row < h; row++) {
+      var o = ((c.y0 - sy0 + row) * sw + (c.x0 - sx0)) * 4;
+      out.set(src.subarray(o, o + w * 4), row * w * 4);
+    }
+    return out;
+  }
+  // Paste `p` ({ x0, y0, w, h, px }) over the cell `c`'s pixels `t` where they
+  // overlap (opaque pixels of p only, as drawn on the canvas).
+  function pasteRect(t, c, p) {
+    var w = c.x1 - c.x0;
+    var x0 = Math.max(c.x0, p.x0), x1 = Math.min(c.x1, p.x0 + p.w);
+    var y0 = Math.max(c.y0, p.y0), y1 = Math.min(c.y1, p.y0 + p.h);
+    for (var y = y0; y < y1; y++) {
+      for (var x = x0; x < x1; x++) {
+        var si = ((y - p.y0) * p.w + (x - p.x0)) * 4, di = ((y - c.y0) * w + (x - c.x0)) * 4;
+        if (!p.px[si + 3]) continue;
+        t[di] = p.px[si]; t[di + 1] = p.px[si + 1]; t[di + 2] = p.px[si + 2]; t[di + 3] = p.px[si + 3];
+      }
+    }
+  }
+
   // CPU terrain (the fallback when WebGPU is unavailable, and ?cpu=1).
   // layer 0: terrain, then each cell's ore and entities as its terrain lands.
   // layer 1: terrain cells only.
@@ -298,11 +338,10 @@
     }) : null;
     var tDone = 0, pDone = 0;
     function progress() { if (onProgress) onProgress(tDone, pDone, disk.length); }
-    function canvasTiles(c) {
-      return new Uint8Array(ctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
-    }
-    function place(c) {
-      return passes.cell(c, passes.needTiles ? canvasTiles(c) : null).then(function () { if (!c.off) { pDone++; progress(); } });
+    // `tiles`: the cell's terrain pixels as the worker returned them (not read
+    // back from the canvas: a browser may blur what it reads back, Brave does)
+    function place(c, tiles) {
+      return passes.cell(c, passes.needTiles ? tiles : null).then(function () { if (!c.off) { pDone++; progress(); } });
     }
     function terrainCell(c) {
       return sendToPool({
@@ -315,13 +354,14 @@
         ctx.putImageData(img, c.x0 + R, c.y0 + R);
         tDone++;
         progress();
+        return r.pixels;
       });
     }
     var jobs = cells.map(function (c) {
-      if (c.off) return passes ? place(c) : null;   // (ore only, see cellPasses)
-      if (layer === 2) return place(c);              // no terrain to draw
+      if (c.off) return passes ? place(c, null) : null;   // (ore only, see cellPasses)
+      if (layer === 2) return place(c, null);              // no terrain to draw
       var t = terrainCell(c);
-      return passes ? t.then(function () { return place(c); }) : t;
+      return passes ? t.then(function (px) { return place(c, px); }) : t;
     });
     return Promise.all(jobs).then(function () {
       return passes ? passes.done() : {};
@@ -451,7 +491,8 @@
         if (exact) {
           if (c.off) return Promise.resolve();
           return sendToPool({
-            seed: SEED, k2: K2, zone: z, layer: 4, radius: diskR, tiles_in: true, entities: withEnts, rect: rect(c)
+            seed: SEED, k2: K2, zone: z, layer: 4, radius: diskR, tiles_in: true, entities: withEnts, rect: rect(c),
+            palette: palette, square: squareSurface(z)
           }, "surface", "ore", tiles).then(function (r) {
             var n = (c.x1 - c.x0) * (c.y1 - c.y0) * 4;
             if (withEnts && r.summary.enemy_tiles) drawEnts(c, r.pixels.subarray(n, 2 * n));
@@ -823,7 +864,7 @@
     var W = els.canvas.width, H = els.canvas.height;
     var fill = getComputedStyle(icons[0].querySelector(".seam-bg")).fill || "#6ed7ff";
     var shown = els.canvas.getBoundingClientRect().width || W;
-    var w = Math.round(Math.max(12, 18 * W / shown)), h = Math.round(w * 17 / 18);
+    var w = Math.round(Math.max(6, 9 * W / shown)), h = Math.round(w * 17 / 18);
     // rasterised at the size it is drawn, without anti-aliasing
     var svg = SEAM_SVG.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" width="' + w + '" height="' + h + '" preserveAspectRatio="none" ')
       .replace('class="seam-bg"', 'fill="' + fill + '"');
@@ -1065,13 +1106,14 @@
     }, function (e) { console.error("core seams failed:", e); });
   }
 
-  // A Space Exploration planet or moon drawn at full size: its ore and its
-  // entities come from one data-driven pass over the terrain's tiles
-  // (cellPasses with opts.exact), which matches the game's ore tile for tile
-  // where the older ore code does not. Not with Krastorio 2 (its resources
-  // are not in the data file) and not Nauvis.
+  // A surface drawn at full size whose ore and entities come from one
+  // data-driven pass over the terrain's tiles (cellPasses with opts.exact) -
+  // the game's own placement, ore and entities together: every Space
+  // Exploration planet and moon (Nauvis too, with or without Krastorio 2)
+  // and base-game Nauvis.
   function exactZone(z, fullSize) {
-    return MOD === "se" && !!z && !z.nauvis && (z.t === "planet" || z.t === "moon") && !!fullSize;
+    if (!z || !fullSize) return false;
+    return squareSurface(z) || ((MOD === "se" || MOD === "k2se") && (z.t === "planet" || z.t === "moon"));
   }
   function wantsEntityLayer(z, fullSize) {
     return ENEMIES && (entitySurface(z, fullSize) || zoneHasEnemies(z));
@@ -1194,9 +1236,6 @@
         var passes = oreCv ? cellPasses(z, R, diskR, palette, oreCv, {
           exact: exactZone(z, full), entities: wantsEntityLayer(z, full), fullSize: full
         }) : null;
-        var canvasTiles = function (c) {
-          return new Uint8Array(tctx.getImageData(c.x0 + R, c.y0 + R, c.x1 - c.x0, c.y1 - c.y0).data.buffer);
-        };
         var gpuKind, backend, label;
         // Nauvis: base-game tiles, except under Space Exploration, where the
         // ground is alien-biomes like every other SE surface
@@ -1211,8 +1250,8 @@
         // The alien-biomes kernel has no starting lake, but every surface
         // with water has one. The lake sits within ~105 tiles of spawn, so
         // the square around spawn is redrawn from the CPU renderer, which has
-        // it - once the GPU has drawn the cells under it, and before those
-        // cells' ore and entities, which read their tiles from the canvas.
+        // it - once the GPU has drawn the cells under it - and pasted into
+        // those cells' terrain before their ore and entities are placed.
         var lake = full && (seNauvis || (kind === "zone" && z.t !== "asteroid-field" && !!z.water && z.water !== "none"));
         var h = Math.min(128, R);
         var underLake = function (c) { return c.x0 < h && c.x1 > -h && c.y0 < h && c.y1 > -h; };
@@ -1221,7 +1260,7 @@
           seed: SEED, k2: K2, zone: z, layer: 1, radius: R, palette: "se",
           rect: { x0: -h, y0: -h, x1: h, y1: h }
         }) : null;
-        var lakeDrawn = null, lakeGo = null;
+        var lakeDrawn = null, lakeGo = null, lakePatch = null;
         if (lake) lakeDrawn = new Promise(function (res) { lakeGo = res; });
         var drawLake = function () {
           lakeP.then(function (r) {
@@ -1233,20 +1272,28 @@
               }
             }
             putImg(tctx, W, r.summary.height, r.pixels, R - h, R - h);
+            lakePatch = { x0: -h, y0: -h, w: W, h: r.summary.height, px: r.pixels };
           }, function (e) { console.error("lake patch failed:", e); }).then(lakeGo);
+        };
+        // a cell's terrain pixels, cut from its GPU block (and the lake patch)
+        var cellTerrain = function (g, c) {
+          if (!passes || !passes.needTiles || !full) return null;
+          var t = cutRect(g.rgba, g.x - R, g.y - R, g.w, c);
+          if (lakePatch) pasteRect(t, c, lakePatch);
+          return t;
         };
 
         var tDone = 0, pDone = 0;
         var show = function () { cellStatus(tDone, pDone, disk.length, "gpu: " + label); };
         var placed = [];
-        var place = function (c) {
+        var place = function (c, tiles) {
           if (times.cpuStart == null) times.cpuStart = Date.now() - t0;
-          return passes.cell(c, passes.needTiles && full ? canvasTiles(c) : null).then(function () {
+          return passes.cell(c, tiles).then(function () {
             if (!c.off) { pDone++; show(); }
           });
         };
         // (the older ore code also places the cells off the disk)
-        if (passes) cells.forEach(function (c) { if (c.off) placed.push(place(c)); });
+        if (passes) cells.forEach(function (c) { if (c.off) placed.push(place(c, null)); });
         show();
         // The GPU draws a 2x2 block of cells per dispatch: a dispatch has a
         // fixed cost (SE Nauvis: 51 s of terrain one cell at a time, 14 s
@@ -1281,9 +1328,9 @@
             g.src.cells.forEach(function (c) {
               if (lake && underLake(c)) {
                 if (--lakeLeft === 0) drawLake();
-                placed.push(lakeDrawn.then(function () { return passes ? place(c) : null; }));
+                placed.push(lakeDrawn.then(function () { return passes ? place(c, cellTerrain(g, c)) : null; }));
               } else if (passes) {
-                placed.push(place(c));
+                placed.push(place(c, cellTerrain(g, c)));
               }
             });
           }
