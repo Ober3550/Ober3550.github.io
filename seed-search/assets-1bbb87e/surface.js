@@ -27,6 +27,18 @@
   // larger than that render into a capped canvas with cells downscaled.
   var DISP_MAX = 4096; // fallback until the probe resolves
   var canvasMaxP = null;
+  // A phone or tablet: the browser's own mobile flag, a mobile user agent, or
+  // an iPad (iPadOS asks for desktop pages but has a touch screen).
+  var IS_MOBILE = (function () {
+    try {
+      if (navigator.userAgentData && navigator.userAgentData.mobile === true) return true;
+      var ua = navigator.userAgent || "";
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+      return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+    } catch (e) { return false; }
+  })();
+  var MOBILE_CANVAS = 1024;
+
   function canvasMax() {
     if (!canvasMaxP) {
       canvasMaxP = (async function () {
@@ -34,6 +46,10 @@
         // path a phone takes on a desktop)
         var forced = parseInt(new URLSearchParams(location.search).get("maxcanvas"), 10);
         if (forced > 0) { DISP_MAX = forced; return forced; }
+        // A phone or tablet draws at most 1024 px a side: a larger canvas
+        // costs it far more than it shows on a phone screen (and draws more
+        // surfaces at full size, which takes their exact pass).
+        if (IS_MOBILE) { DISP_MAX = MOBILE_CANVAS; return MOBILE_CANVAS; }
         function works(W) {
           try {
             var cv = document.createElement("canvas");
@@ -596,7 +612,7 @@
   // only those two images are kept in memory, and the "Terrain Brightness"
   // slider darkens the terrain with a CSS filter instead of a redraw.
   var sa = null;   // { R, done } - the Space Age render in progress / on screen
-  var SA_LAYER_MAX = 5000; // Space Age planets: px per side of each canvas
+  var SA_LAYER_MAX = IS_MOBILE ? MOBILE_CANVAS : 5000; // Space Age planets: px per side of each canvas
 
   function fmtAmount(v) {
     if (v >= 1e9) return (v / 1e9).toFixed(1) + "B";
@@ -645,13 +661,7 @@
   var LITE = (function () {
     if (/[?&]entities=all\b/.test(location.search)) return false;
     if (/[?&]entities=lite\b/.test(location.search)) return true;
-    try {
-      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean" && navigator.userAgentData.mobile) return true;
-      var ua = navigator.userAgent || "";
-      if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
-      // (iPadOS asks for desktop pages)
-      return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
-    } catch (e) { return false; }
+    return IS_MOBILE;
   })();
   var SE_HIDDEN_GROUPS = ["rocks", "huge"];
   var enemyOverlayEl = null;
