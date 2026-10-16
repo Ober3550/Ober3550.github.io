@@ -87,13 +87,29 @@
   }
   window.__probeCanvasMax = function () { return canvasMax(); };
   var cellCv = null, cellCx = null;
+  // Exactly the cell's size: drawn scaled down with smoothing, a canvas
+  // samples a little past the edge of what it copies, so a larger scratch
+  // canvas would blend in what an earlier cell left beside it (lines along
+  // the cell edges of a downscaled map).
   function cellCanvas(w, h) {
-    if (!cellCv || cellCv.width < w || cellCv.height < h) {
+    if (!cellCv) {
       cellCv = document.createElement("canvas");
-      cellCv.width = w; cellCv.height = h;
       cellCx = cellCv.getContext("2d");
     }
+    if (cellCv.width !== w || cellCv.height !== h) {
+      cellCv.width = w; cellCv.height = h; // (also clears it)
+    } else {
+      cellCx.clearRect(0, 0, w, h);
+    }
     return cellCx;
+  }
+  // Draw the scratch canvas's w x h onto `ctx` at (dx, dy), dw x dh, with the
+  // edges on whole pixels: neighbouring cells of a downscaled map then meet
+  // exactly instead of each half-covering the pixel between them (seams).
+  function drawCell(ctx, w, h, dx, dy, dw, dh) {
+    var x0 = Math.floor(dx), y0 = Math.floor(dy);
+    var x1 = Math.max(x0 + 1, Math.floor(dx + dw)), y1 = Math.max(y0 + 1, Math.floor(dy + dh));
+    ctx.drawImage(cellCv, 0, 0, w, h, x0, y0, x1 - x0, y1 - y0);
   }
   // ?r=N -> initialise the preview radius to the zone's radius (passed by the
   // seed page rows) so the surface opens disk-cropped to the zone.
@@ -478,7 +494,7 @@
       var img = cx.createImageData(w, h);
       img.data.set(px);
       cx.putImageData(img, 0, 0);
-      octx.drawImage(cellCv, 0, 0, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
+      drawCell(octx, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
       for (var k = 0; k < mine.length; k += 3) { drawWell(mine[k], mine[k + 1], mine[k + 2]); wells.push(mine[k], mine[k + 1], mine[k + 2]); }
       var res = r.summary.resources || {};
       Object.keys(res).forEach(function (rn) {
@@ -496,7 +512,7 @@
       var img = cx.createImageData(w, h);
       img.data.set(px);
       cx.putImageData(img, 0, 0);
-      ectx.drawImage(cellCv, 0, 0, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
+      drawCell(ectx, w, h, (c.x0 + R) / scale, (c.y0 + R) / scale, w / scale, h / scale);
     }
     var rect = function (c) { return { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1 }; };
     return {
@@ -789,7 +805,7 @@
       cx.putImageData(new ImageData(job[0], w, h), 0, 0);
       var ctx = job[1].getContext("2d");
       ctx.imageSmoothingEnabled = dw !== w;
-      ctx.drawImage(cellCv, 0, 0, w, h, dx, dy, dw, dh);
+      drawCell(ctx, w, h, dx, dy, dw, dh);
     });
   }
   // Copy a rect of the entity canvas to the filtered view without the
@@ -1361,7 +1377,7 @@
               var cx = cellCanvas(g.w, g.h);
               cx.putImageData(gimg, 0, 0);
               tctx.imageSmoothingEnabled = true;
-              tctx.drawImage(cellCv, 0, 0, g.w, g.h, g.x / scaleS, g.y / scaleS, g.w / scaleS, g.h / scaleS);
+              drawCell(tctx, g.w, g.h, g.x / scaleS, g.y / scaleS, g.w / scaleS, g.h / scaleS);
             }
             tDone += g.src.cells.length;
             show();
@@ -1411,7 +1427,7 @@
         cimg.data.set(px);
         cx.putImageData(cimg, 0, 0);
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(cellCv, 0, 0, w, h, tx / scale, ty / scale, w / scale, h / scale);
+        drawCell(ctx, w, h, tx / scale, ty / scale, w / scale, h / scale);
       };
       var run_ = sa;
       var tctx = els.canvas.getContext("2d");
