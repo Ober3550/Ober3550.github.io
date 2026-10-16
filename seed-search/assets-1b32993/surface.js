@@ -412,9 +412,9 @@
     var octx = oreCv.getContext("2d");
     var exact = !!opts.exact;
     var withEnts = !!opts.entities;
-    // the entities themselves, or (a surface not drawn at full size) the
-    // enemy areas
-    var entities = exact || entitySurface(z, opts.fullSize);
+    // the entities themselves, or (a surface not drawn at full size, a phone)
+    // the enemy areas
+    var entities = !LITE && (exact || entitySurface(z, opts.fullSize));
     var ectx = withEnts ? enemyOverlay(oreCv.width, entities ? "Entities" : undefined).getContext("2d") : null;
     if (ectx) ectx.imageSmoothingEnabled = true;
     var scale = (2 * R) / oreCv.width; // tiles per canvas pixel
@@ -490,14 +490,24 @@
       cell: function (c, tiles) {
         if (exact) {
           if (c.off) return Promise.resolve();
-          return sendToPool({
-            seed: SEED, k2: K2, zone: z, layer: 4, radius: diskR, tiles_in: true, entities: withEnts, rect: rect(c),
+          var ej = [sendToPool({
+            seed: SEED, k2: K2, zone: z, layer: 4, radius: diskR, tiles_in: true, entities: withEnts && entities, rect: rect(c),
             palette: palette, square: squareSurface(z)
           }, "surface", "ore", tiles).then(function (r) {
             var n = (c.x1 - c.x0) * (c.y1 - c.y0) * 4;
-            if (withEnts && r.summary.enemy_tiles) drawEnts(c, r.pixels.subarray(n, 2 * n));
+            if (withEnts && entities && r.summary.enemy_tiles) drawEnts(c, r.pixels.subarray(n, 2 * n));
             drawOre(c, r.pixels.subarray(0, n), r);
-          });
+          })];
+          // (the ore alone: the enemy areas from a request of their own)
+          if (withEnts && !entities) {
+            ej.push(sendToPool({
+              seed: SEED, k2: K2, zone: z, layer: 3, radius: diskR, palette: palette, entities: false,
+              rect: rect(c), square: squareSurface(z)
+            }, "surface", "ore").then(function (r) {
+              if (r.summary.enemy_tiles) drawEnts(c, r.pixels);
+            }, function (e) { console.error("enemy areas cell failed:", e); }));
+          }
+          return Promise.all(ej);
         }
         var jobs = [sendToPool({
           seed: SEED, k2: K2, zone: z, layer: 0, radius: diskR, terrainless: true,
@@ -521,7 +531,8 @@
           var v = totals[rn].amount;
           totals[rn].display = v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(2) + "M" : String(v);
         });
-        return (withEnts ? drawSeams(z, R) : Promise.resolve()).then(function () { return totals; });
+        // (the core seams whatever the enemies)
+        return drawSeams(z, R).then(function () { return totals; });
       }
     };
   }
@@ -626,6 +637,22 @@
   // trees, plants, nests). It is drawn once; the checkbox only shows or
   // hides the canvas. ?entities=0 (or ?enemies=0) skips generating it.
   var ENEMIES = !/[?&](enemies|entities)=0\b/.test(location.search);
+  // On a phone or tablet the entities themselves (trees, rocks, cliffs,
+  // nests) are left out - most of a surface's generation time - and the
+  // enemies shown as the enemy base areas; terrain, ore and core seams stay.
+  // ?entities=all draws them anyway, ?entities=lite leaves them out on any
+  // device. (Space Age planets keep theirs: they come with the map.)
+  var LITE = (function () {
+    if (/[?&]entities=all\b/.test(location.search)) return false;
+    if (/[?&]entities=lite\b/.test(location.search)) return true;
+    try {
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean" && navigator.userAgentData.mobile) return true;
+      var ua = navigator.userAgent || "";
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+      // (iPadOS asks for desktop pages)
+      return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+    } catch (e) { return false; }
+  })();
   var SE_HIDDEN_GROUPS = ["rocks", "huge"];
   var enemyOverlayEl = null;
   // Entities arrive in one image, each class in its own colour (classColor
@@ -657,9 +684,11 @@
     if (!els.enemyWrap || !ENEMIES) return;
     var se = MOD === "se" || MOD === "k2se";
     els.enemyWrap.hidden = false;
-    if (els.areas) els.areas.hidden = true;
+    // (light mode: the one enemy-areas checkbox; else the entity groups)
+    var groups = !LITE || kind === "sa";
+    if (els.areas) els.areas.hidden = groups;
     if (els.groups) {
-      els.groups.hidden = false;
+      els.groups.hidden = !groups;
       // alien-biomes rocks are flagged "not-on-map": the game's own map does
       // not draw them, so on an SE surface they start unticked
       els.groups.querySelectorAll("input[data-group]").forEach(function (cb) {
@@ -812,6 +841,7 @@
   // entities are placed on those tiles - a surface too large for that keeps
   // the enemy areas.
   function entitySurface(z, fullSize) {
+    if (LITE) return false;
     return squareSurface(z) || (seSolid(z) && !!fullSize);
   }
   // ── Download ──────────────────────────────────────────────────────────────
